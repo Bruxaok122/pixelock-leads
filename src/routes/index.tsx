@@ -6,6 +6,8 @@ import { formatWhatsapp, isValidWhatsapp } from "@/lib/lead-validation";
 import { OfferBlock } from "@/components/offer-block";
 import lucasAsset from "@/assets/lucas-galhardo.jpg.asset.json";
 import { GuaranteeBlock } from "@/components/guarantee-block";
+import { FaqBlock } from "@/components/faq-block";
+import { SiteFooter } from "@/components/site-footer";
 
 const UNLOCK_SECONDS = 120;
 const OFFER_1_SECONDS = 20 * 60;
@@ -312,9 +314,9 @@ function Index() {
 
       <GuaranteeBlock />
 
-      <footer className="border-t border-border pt-6 text-center text-[10px] text-muted-foreground">
-        Conteúdo informativo. Uma liberação disponível por CPF.
-      </footer>
+      <FaqBlock />
+
+      <SiteFooter />
     </main>
   );
 }
