@@ -313,10 +313,11 @@ function Index() {
       </section>
 
       <GuaranteeBlock />
-
-      <FaqBlock />
-
-      <SiteFooter />
     </main>
+
+    <div className="bg-black">
+      <FaqBlock />
+      <SiteFooter />
+    </div>
   );
 }
