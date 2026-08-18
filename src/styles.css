@@ -42,6 +42,8 @@
   --color-pix-foreground: var(--pix-foreground);
   --color-field: var(--field);
   --color-field-foreground: var(--field-foreground);
+  --color-sheet: var(--sheet);
+  --color-sheet-foreground: var(--sheet-foreground);
 }
 
 :root {
