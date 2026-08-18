@@ -30,7 +30,7 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-type Stage = "locked" | "form" | "reserved";
+type Stage = "locked" | "form" | "validated" | "reserved";
 
 function Index() {
   const [playing, setPlaying] = useState(false);
