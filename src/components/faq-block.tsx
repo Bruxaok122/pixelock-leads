@@ -36,7 +36,7 @@ export function FaqBlock() {
     <section
       id="faq"
       aria-label="Perguntas frequentes"
-      className="border-t border-border bg-background py-12"
+      className="border-t border-border py-12"
     >
       <div className="mx-auto max-w-[760px] text-center">
         <h2 className="text-[26px] tracking-tight sm:text-[30px]">

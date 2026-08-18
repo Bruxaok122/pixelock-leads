@@ -108,6 +108,7 @@ function Index() {
   const showOffer1 = elapsed >= OFFER_1_SECONDS;
 
   return (
+    <>
     <main className="mx-auto w-full max-w-[760px] px-3 pb-14 pt-10">
       <header className="mx-auto mb-6 max-w-[760px] text-center">
         <h1 className="text-[clamp(25px,6vw,42px)] font-normal uppercase leading-[1.08] tracking-tight">
@@ -313,10 +314,12 @@ function Index() {
       </section>
 
       <GuaranteeBlock />
-
-      <FaqBlock />
-
-      <SiteFooter />
     </main>
+
+    <div className="bg-black">
+      <FaqBlock />
+      <SiteFooter />
+    </div>
+    </>
   );
 }
