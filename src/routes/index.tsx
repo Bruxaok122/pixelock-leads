@@ -313,10 +313,10 @@ function Index() {
         </div>
       </section>
 
-      <GuaranteeBlock />
+      <GuaranteeBlock price={149} />
     </main>
 
-    <div className="bg-black">
+    <div className="bg-black px-4">
       <FaqBlock />
       <SiteFooter />
     </div>
