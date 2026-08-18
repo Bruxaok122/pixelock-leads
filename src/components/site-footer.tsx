@@ -1,4 +1,16 @@
-const LINKS = ["Termos de uso", "Política de Privacidade", "Suporte", "Contato"];
+import { Link } from "@tanstack/react-router";
+
+type FooterLink = {
+  label: string;
+  to?: string;
+};
+
+const LINKS: FooterLink[] = [
+  { label: "Termos de uso", to: "/termos" },
+  { label: "Política de Privacidade", to: "/politica" },
+  { label: "Suporte" },
+  { label: "Contato" },
+];
 
 export function SiteFooter() {
   return (
@@ -11,10 +23,16 @@ export function SiteFooter() {
 
       <ul className="mx-auto mt-10 max-w-[760px] space-y-6 text-left text-[16px]">
         {LINKS.map((link) => (
-          <li key={link}>
-            <a href="#" className="hover:text-brand">
-              {link}
-            </a>
+          <li key={link.label}>
+            {link.to ? (
+              <Link to={link.to} className="hover:text-brand">
+                {link.label}
+              </Link>
+            ) : (
+              <a href="#" className="hover:text-brand">
+                {link.label}
+              </a>
+            )}
           </li>
         ))}
       </ul>

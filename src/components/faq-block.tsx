@@ -33,7 +33,11 @@ export function FaqBlock() {
   const [open, setOpen] = useState<number | null>(null);
 
   return (
-    <section id="faq" aria-label="Perguntas frequentes" className="py-12">
+    <section
+      id="faq"
+      aria-label="Perguntas frequentes"
+      className="border-t border-border bg-background py-12"
+    >
       <div className="mx-auto max-w-[760px] text-center">
         <h2 className="text-[26px] tracking-tight sm:text-[30px]">
           Perguntas <b className="font-bold">frequentes</b>
