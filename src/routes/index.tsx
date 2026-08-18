@@ -134,7 +134,7 @@ function Index() {
           )}
         </div>
 
-        <p className="mt-3 rounded-xl bg-highlight px-3 py-2.5 text-center text-[13px] font-extrabold text-highlight-foreground">
+        <p className="mt-3 px-1 text-center text-[13px] text-muted-foreground">
           Aperte no Play e liberte seu acesso para assistir (vídeo informativo ~ Uma liberação disponível por
           CPF)
         </p>
