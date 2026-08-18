@@ -89,7 +89,8 @@ function Index() {
     const result = await send({ data: { pixKey: pixKey.trim(), whatsapp: whatsapp.trim() } });
     setSending(false);
     if (result.ok) {
-      setStage("reserved");
+      setStage("validated");
+      window.setTimeout(() => setStage("reserved"), 1600);
       return;
     }
     if (result.reason === "duplicate") {
