@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import logoAsset from "@/assets/logo.png.asset.json";
 
 type FooterLink = {
   label: string;
@@ -15,11 +16,12 @@ const LINKS: FooterLink[] = [
 export function SiteFooter() {
   return (
     <footer className="pb-8 pt-10 text-center">
-      <p className="text-[26px] font-bold uppercase leading-none tracking-tight">
-        <span className="text-[14px] align-middle">Em </span>Alta
-        <br />
-        <span className="text-[14px] align-middle">No </span>Mundo
-      </p>
+      <img
+        src={logoAsset.url}
+        alt="Em Alta no Mundo"
+        className="mx-auto h-auto w-full max-w-[420px]"
+        loading="lazy"
+      />
 
       <ul className="mx-auto mt-10 max-w-[760px] space-y-6 text-left text-[16px]">
         {LINKS.map((link) => (
