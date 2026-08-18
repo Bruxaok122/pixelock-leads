@@ -50,7 +50,10 @@ export function GuaranteeBlock({ price = 185 }: { price?: number }) {
   const pixPrice = Math.round(price * 0.95 * 100) / 100;
 
   return (
-    <section aria-label="Garantia de 30 dias" className="pb-12">
+    <section
+      aria-label="Garantia de 30 dias"
+      className="pb-12 lg:mx-[calc(50%-46vw)] lg:w-[92vw] lg:max-w-none"
+    >
       <div className="w-full rounded-[28px] bg-sheet p-6 text-center text-sheet-foreground sm:p-10">
         <img
           src={selo}
