@@ -202,16 +202,17 @@ function Index() {
       ) : null}
 
       {stage === "reserved" && !showOffer1 ? (
-        <section className="reveal-up mx-auto mt-5 rounded-2xl bg-pix p-6 text-center text-pix-foreground">
+        <section className="reveal-up mx-auto mt-5 rounded-2xl bg-sheet p-6 text-center text-sheet-foreground">
           <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-success text-lg font-bold text-success-foreground">
             ✓
           </div>
           <h2 className="mt-4 text-[21px] font-bold tracking-tight">Transferência Reservada com Sucesso.</h2>
-          <p className="mt-1 text-[14px] opacity-80">Continue assistindo para garantir!</p>
+          <p className="mt-1 text-[14px] opacity-70">Continue assistindo para garantir!</p>
 
-          <div className="mt-5 rounded-xl bg-black/5 p-4 text-left">
+          <div className="mt-5 rounded-xl bg-black/[0.04] p-4 text-left">
             <p className="text-[15px]">R$350,00 Reservados para:</p>
-            <div className="mt-3 flex items-center gap-3 rounded-xl border border-black/10 bg-card-contrast px-4 py-3">
+            <div className="mt-3 flex items-center gap-3 rounded-xl border border-black/10 bg-sheet px-4 py-3">
+
               <span className="text-[14px] opacity-50">Chave Pix</span>
               <span className="truncate text-[15px] font-semibold">
                 {blocked ? "Resgate já registrado" : pixKey}
