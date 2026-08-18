@@ -48,7 +48,7 @@
 
 :root {
   --radius: 0.75rem;
-  --background: oklch(0.16 0.032 262);
+  --background: oklch(0 0 0);
   --foreground: oklch(0.97 0.008 260);
   --card: oklch(0.235 0.045 262);
   --card-foreground: oklch(0.97 0.008 260);
@@ -107,8 +107,7 @@
   }
 
   body {
-    background: var(--gradient-page);
-    background-attachment: fixed;
+    background: var(--color-background);
     color: var(--color-foreground);
     font-family: "Space Grotesk", system-ui, Arial, sans-serif;
     line-height: 1.5;
