@@ -3,9 +3,9 @@ import { useState } from "react";
 
 const FAQ_ITEMS: { question: string; answer: string }[] = [
   {
-    question: "Como funciona a tecnologia?",
+    question: "⭐ Estou ganhando R$100,00 antes mesmo de Ativar a Tecnologia. Como isso é possível?",
     answer:
-      "Edite este texto com a explicação que você quiser. Este é apenas um exemplo de resposta.",
+      "Sim, você já ganhou R$100,00 antes mesmo de Ativar a Tecnologia de Transferências. Seu acesso à Tecnologia custa apenas R$149,00 e adquirindo seu acesso neste exato momento você receberá R$250,00 de presente que eu te darei; estes valores serão enviados para sua conta em forma de saldo real, para testar a tecnologia ou sacar, eles já são seus. É por isso que você já está saindo no LUCRO, antes mesmo de ativar seu acesso a tecnologia, você já ganhou R$100,00 só por tomar a decisão de clicar no botão e concluir sua inscrição na Tecnologia.",
   },
   {
     question: "Eu preciso entender de investimentos para usar?",
