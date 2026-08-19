@@ -191,7 +191,7 @@ function Index() {
         </section>
       ) : null}
 
-      {stage === "reserved" && !showOffer1 ? (
+      {stage === "reserved" && !showOffer ? (
         <section className="reveal-up mx-auto mt-5 rounded-2xl bg-sheet p-6 text-center text-sheet-foreground">
           <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-success text-lg font-bold text-success-foreground">
             ✓
