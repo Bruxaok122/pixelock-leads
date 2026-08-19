@@ -11,6 +11,8 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { SiteProtection } from "../components/site-protection";
+
 
 function NotFoundComponent() {
   return (
@@ -85,6 +87,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "robots", content: "index, follow, noarchive, nosnippet, noimageindex" },
+      { name: "referrer", content: "strict-origin-when-cross-origin" },
+
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -125,8 +130,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <SiteProtection />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
     </QueryClientProvider>
   );
 }
+
