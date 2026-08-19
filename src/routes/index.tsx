@@ -213,7 +213,10 @@ function Index() {
       ) : null}
 
 
-      {showOffer1 ? <OfferBlock price={showOffer2 ? 99 : 149} {...(showOffer2 ? { previousPrice: 149 } : {})} /> : null}
+      {showOffer ? (
+        <OfferBlock price={offerPrice} {...(previousPrice ? { previousPrice } : {})} />
+      ) : null}
+
 
       <section id="artigos" className="py-12">
         <div className="mb-6 text-center">
