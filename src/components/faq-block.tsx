@@ -18,9 +18,9 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
       "Não existe essa possibilidade. A tecnologia de transferências irá apenas transferir lucros direto para sua conta bancária e, caso tenha dúvidas, existe a garantia de que você receberá no mínimo 350 reais por dia direto no seu banco preferido. Afinal, se não receber, esse dinheiro sai do nosso bolso e vai direto para o seu. Essa foi a exigência do governo brasileiro para que nossa Tecnologia fosse homologada no Brasil.",
   },
   {
-    question: "Esses R$350 que eu recebo são dinheiro de verdade?",
+    question: "Esses R$250 que eu recebo são dinheiro de verdade?",
     answer:
-      "Edite este texto com a explicação que você quiser. Este é apenas um exemplo de resposta.",
+      "Sim. Não é bônus fictício nem crédito interno. É saldo real, no seu nome, que pode ser sacado a qualquer momento. Você receberá estes R$250 logo após adquirir seu acesso a tecnologia, podendo fazer o que quiser com ele.",
   },
   {
     question: "E se eu travar no processo, ou precisar de ajuda, vou ficar sozinho?",
