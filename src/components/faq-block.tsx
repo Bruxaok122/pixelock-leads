@@ -25,7 +25,7 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
   {
     question: "E se eu travar no processo, ou precisar de ajuda, vou ficar sozinho?",
     answer:
-      "Edite este texto com a explicação que você quiser. Este é apenas um exemplo de resposta.",
+      "Fique tranquilo, isso não vai acontecer, pois a tecnologia foi desenvolvida pensando em cada mínimo detalhe. Dentro do aplicativo, ao lado de toda função, você vai ver um pequeno botão de “?”. Toda vez que você olhar para qualquer função e não entender o que ela faz ou pra que ela funciona, é só tocar no “?”. Na mesma hora aparece uma explicação clara, direta e objetiva dizendo: o que aquela função faz; quando usar; quando não usar; e qual é o impacto real dela no seu lucro.\n\n\nOu seja: não existe como você errar dentro da tecnologia. E você nunca vai estar sozinho. Pois você receberá um assessor pessoal, um ser humano de verdade, especializado, treinado, que só tem um trabalho: te acompanhar em tudo via WhatsApp, garantindo respostas em menos de cinco minutos.",
   },
 ];
 
