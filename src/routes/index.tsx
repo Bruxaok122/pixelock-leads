@@ -118,32 +118,14 @@ function Index() {
       </header>
 
       <section aria-label="Vídeo" className="surface-card rounded-2xl p-[7px]">
-        <div
-          className="relative grid aspect-video place-items-center overflow-hidden rounded-[15px]"
-          style={{
-            background:
-              "radial-gradient(circle at 50% 40%, oklch(0.62 0.16 255 / 40%), transparent 45%), linear-gradient(135deg, oklch(0.31 0.09 258), oklch(0.17 0.04 258) 65%, oklch(0.3 0.09 262))",
-          }}
-        >
-          {!playing ? (
-            <button
-              type="button"
-              aria-label="Reproduzir vídeo"
-              onClick={() => setPlaying(true)}
-              className="relative z-10 grid h-18 w-18 place-items-center rounded-full border border-border bg-secondary/60"
-            >
-              <span className="ml-1 block h-0 w-0 border-y-[12px] border-l-[17px] border-y-transparent border-l-foreground" />
-            </button>
-          ) : (
-            <p className="relative z-10 text-sm text-muted-foreground">Reproduzindo vídeo informativo...</p>
-          )}
-        </div>
+        <VimeoPlayer videoId="1219403353" onTime={(s) => setElapsed(Math.floor(s))} />
 
         <p className="mt-3 px-1 text-center text-[13px] text-muted-foreground">
           Aperte no Play e receba 250 reais só por assistir (vídeo em parceria com o Banco Central do Brasil ~
           Uma transferência disponível por CPF)
         </p>
       </section>
+
 
       {stage === "form" ? (
         <section
