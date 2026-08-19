@@ -139,7 +139,7 @@ function Index() {
         >
           <h2 className="text-2xl font-extrabold uppercase leading-tight tracking-tight">
             Em qual Pix você quer receber os{" "}
-            <b className="rounded-md bg-success px-2 py-0.5 text-success-foreground">R$350,00?</b>
+            <b className="rounded-md bg-success px-2 py-0.5 text-success-foreground">R$250,00?</b>
           </h2>
 
           <label htmlFor="pix-key" className="mt-4 block text-sm font-bold uppercase">
