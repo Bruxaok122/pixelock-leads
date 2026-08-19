@@ -10,7 +10,7 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
   {
     question: "Eu preciso entender de investimentos para usar?",
     answer:
-      "Edite este texto com a explicação que você quiser. Este é apenas um exemplo de resposta.",
+      "Não, você não precisa entender nada sobre investimentos para lucrar com a tecnologia. A única coisa que você precisa fazer é apertar em “Ativar tecnologia”. Toda a parte difícil (análise, execução, filtragem, risco) já foi feita pelos analistas profissionais do escritório, e quando lucrarmos automaticamente será transferido para a sua conta bancária preferida a mesma valorização que tivermos. Você não precisa se preocupar com nada.",
   },
   {
     question: "Eu posso perder dinheiro usando essa tecnologia?",
