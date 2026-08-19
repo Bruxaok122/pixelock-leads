@@ -8,10 +8,13 @@ import lucasAsset from "@/assets/lucas-galhardo.jpg.asset.json";
 import { GuaranteeBlock } from "@/components/guarantee-block";
 import { FaqBlock } from "@/components/faq-block";
 import { SiteFooter } from "@/components/site-footer";
+import { VimeoPlayer } from "@/components/vimeo-player";
 
 const UNLOCK_SECONDS = 120;
 const OFFER_1_SECONDS = 20 * 60;
 const OFFER_2_SECONDS = 40 * 60;
+const OFFER_3_SECONDS = 60 * 60;
+
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -36,8 +39,8 @@ export const Route = createFileRoute("/")({
 type Stage = "locked" | "form" | "validated" | "reserved";
 
 function Index() {
-  const [playing, setPlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+
   const [stage, setStage] = useState<Stage>("locked");
   const [pixKey, setPixKey] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
@@ -60,11 +63,10 @@ function Index() {
     });
   }, [claimStatus]);
 
-  useEffect(() => {
-    if (!playing) return;
-    const id = window.setInterval(() => setElapsed((value) => value + 1), 1000);
-    return () => window.clearInterval(id);
-  }, [playing]);
+  const handleTime = useCallback((seconds: number) => {
+    setElapsed((prev) => (seconds > prev ? Math.floor(seconds) : prev));
+  }, []);
+
 
   useEffect(() => {
     if (elapsed >= UNLOCK_SECONDS && stage === "locked" && !blocked) setStage("form");
@@ -104,8 +106,10 @@ function Index() {
     setFeedback(result.message);
   }, [pixKey, whatsapp, send]);
 
-  const showOffer2 = elapsed >= OFFER_2_SECONDS;
-  const showOffer1 = elapsed >= OFFER_1_SECONDS;
+  const showOffer = elapsed >= OFFER_1_SECONDS;
+  const offerPrice = elapsed >= OFFER_3_SECONDS ? 19 : elapsed >= OFFER_2_SECONDS ? 99 : 149;
+  const previousPrice = elapsed >= OFFER_3_SECONDS ? 99 : elapsed >= OFFER_2_SECONDS ? 149 : undefined;
+
 
   return (
     <>
@@ -118,32 +122,14 @@ function Index() {
       </header>
 
       <section aria-label="Vídeo" className="surface-card rounded-2xl p-[7px]">
-        <div
-          className="relative grid aspect-video place-items-center overflow-hidden rounded-[15px]"
-          style={{
-            background:
-              "radial-gradient(circle at 50% 40%, oklch(0.62 0.16 255 / 40%), transparent 45%), linear-gradient(135deg, oklch(0.31 0.09 258), oklch(0.17 0.04 258) 65%, oklch(0.3 0.09 262))",
-          }}
-        >
-          {!playing ? (
-            <button
-              type="button"
-              aria-label="Reproduzir vídeo"
-              onClick={() => setPlaying(true)}
-              className="relative z-10 grid h-18 w-18 place-items-center rounded-full border border-border bg-secondary/60"
-            >
-              <span className="ml-1 block h-0 w-0 border-y-[12px] border-l-[17px] border-y-transparent border-l-foreground" />
-            </button>
-          ) : (
-            <p className="relative z-10 text-sm text-muted-foreground">Reproduzindo vídeo informativo...</p>
-          )}
-        </div>
+        <VimeoPlayer videoId="1219403353" onTime={handleTime} />
 
         <p className="mt-3 px-1 text-center text-[13px] text-muted-foreground">
           Aperte no Play e receba 250 reais só por assistir (vídeo em parceria com o Banco Central do Brasil ~
           Uma transferência disponível por CPF)
         </p>
       </section>
+
 
       {stage === "form" ? (
         <section
@@ -205,7 +191,7 @@ function Index() {
         </section>
       ) : null}
 
-      {stage === "reserved" && !showOffer1 ? (
+      {stage === "reserved" && !showOffer ? (
         <section className="reveal-up mx-auto mt-5 rounded-2xl bg-sheet p-6 text-center text-sheet-foreground">
           <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-success text-lg font-bold text-success-foreground">
             ✓
@@ -227,7 +213,10 @@ function Index() {
       ) : null}
 
 
-      {showOffer1 ? <OfferBlock price={showOffer2 ? 99 : 149} {...(showOffer2 ? { previousPrice: 149 } : {})} /> : null}
+      {showOffer ? (
+        <OfferBlock price={offerPrice} {...(previousPrice ? { previousPrice } : {})} />
+      ) : null}
+
 
       <section id="artigos" className="py-12">
         <div className="mb-6 text-center">
@@ -313,7 +302,7 @@ function Index() {
         </div>
       </section>
 
-      <GuaranteeBlock price={149} />
+      <GuaranteeBlock price={offerPrice} />
     </main>
 
     <div className="bg-black px-4">
