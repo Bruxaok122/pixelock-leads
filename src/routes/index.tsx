@@ -39,7 +39,7 @@ export const Route = createFileRoute("/")({
 type Stage = "locked" | "form" | "validated" | "reserved";
 
 function Index() {
-  const [playing, setPlaying] = useState(false);
+  const [elapsedRaw, setElapsedRaw] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [stage, setStage] = useState<Stage>("locked");
   const [pixKey, setPixKey] = useState("");
