@@ -8,10 +8,13 @@ import lucasAsset from "@/assets/lucas-galhardo.jpg.asset.json";
 import { GuaranteeBlock } from "@/components/guarantee-block";
 import { FaqBlock } from "@/components/faq-block";
 import { SiteFooter } from "@/components/site-footer";
+import { VimeoPlayer } from "@/components/vimeo-player";
 
 const UNLOCK_SECONDS = 120;
 const OFFER_1_SECONDS = 20 * 60;
 const OFFER_2_SECONDS = 40 * 60;
+const OFFER_3_SECONDS = 60 * 60;
+
 
 export const Route = createFileRoute("/")({
   ssr: false,
