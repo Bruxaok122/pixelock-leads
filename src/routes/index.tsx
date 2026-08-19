@@ -106,8 +106,10 @@ function Index() {
     setFeedback(result.message);
   }, [pixKey, whatsapp, send]);
 
-  const showOffer2 = elapsed >= OFFER_2_SECONDS;
-  const showOffer1 = elapsed >= OFFER_1_SECONDS;
+  const showOffer = elapsed >= OFFER_1_SECONDS;
+  const offerPrice = elapsed >= OFFER_3_SECONDS ? 19 : elapsed >= OFFER_2_SECONDS ? 99 : 149;
+  const previousPrice = elapsed >= OFFER_3_SECONDS ? 99 : elapsed >= OFFER_2_SECONDS ? 149 : undefined;
+
 
   return (
     <>
