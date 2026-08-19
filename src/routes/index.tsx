@@ -200,7 +200,7 @@ function Index() {
           <p className="mt-1 text-[14px] opacity-70">Continue assistindo para garantir!</p>
 
           <div className="mt-5 rounded-xl bg-black/[0.04] p-4 text-left">
-            <p className="text-[15px]">R$350,00 Reservados para:</p>
+            <p className="text-[15px]">R$250,00 Reservados para:</p>
             <div className="mt-3 flex items-center gap-3 rounded-xl border border-black/10 bg-sheet px-4 py-3">
 
               <span className="text-[14px] opacity-50">Chave Pix</span>
