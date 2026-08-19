@@ -63,11 +63,10 @@ function Index() {
     });
   }, [claimStatus]);
 
-  useEffect(() => {
-    if (!playing) return;
-    const id = window.setInterval(() => setElapsed((value) => value + 1), 1000);
-    return () => window.clearInterval(id);
-  }, [playing]);
+  const handleTime = useCallback((seconds: number) => {
+    setElapsed((prev) => (seconds > prev ? Math.floor(seconds) : prev));
+  }, []);
+
 
   useEffect(() => {
     if (elapsed >= UNLOCK_SECONDS && stage === "locked" && !blocked) setStage("form");
