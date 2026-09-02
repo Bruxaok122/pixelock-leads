@@ -132,7 +132,7 @@ function Index() {
       <section aria-label="Vídeo" className="surface-card rounded-2xl p-[7px]">
         <VimeoPlayer videoId="1219403353" onTime={handleTime} />
 
-        <p className="mt-3 px-1 text-center text-[13px] font-bold text-foreground">
+        <p className="mt-3 px-1 text-center text-[13px] text-muted-foreground">
           Aperte no Play e receba 250 reais só por assistir (vídeo em parceria com o Banco Central do Brasil ~
           Uma transferência disponível por CPF)
         </p>
@@ -151,10 +151,10 @@ function Index() {
 
           <div
             aria-hidden
-            className="mt-4 rounded-xl bg-destructive/25 px-4 py-8 text-center backdrop-blur-sm ring-1 ring-destructive/40"
+            className="mt-4 rounded-xl bg-white/10 px-4 py-8 text-center backdrop-blur-sm"
           >
-            <p className="text-sm font-bold uppercase tracking-[0.08em] text-foreground">Chave pix disponível em</p>
-            <p className="mt-1 text-[15px] tabular-nums opacity-90 text-foreground">
+            <p className="text-sm font-bold uppercase tracking-[0.08em]">Chave pix disponível em</p>
+            <p className="mt-1 text-[15px] tabular-nums opacity-80">
               {countdownLabel(UNLOCK_SECONDS - elapsed)}
             </p>
           </div>
