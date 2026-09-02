@@ -129,11 +129,11 @@ function Index() {
         </h1>
       </header>
 
-      <section aria-label="Vídeo" className="surface-card rounded-2xl p-[7px]">
+      <section aria-label="Vídeo" className="surface-card rounded-2xl p-[7px] -mx-2 sm:mx-0">
         <VimeoPlayer videoId="1219403353" onTime={handleTime} />
 
         <p className="mt-3 px-1 text-center text-[13px] text-muted-foreground">
-          Aperte no Play e receba 250 reais só por assistir (vídeo em parceria com o Banco Central do Brasil ~
+          <b className="font-bold">Aperte no Play</b> e receba 250 reais só por assistir (vídeo em parceria com o Banco Central do Brasil ~
           Uma transferência disponível por CPF)
         </p>
       </section>
