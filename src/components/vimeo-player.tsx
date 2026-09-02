@@ -56,10 +56,10 @@ export function VimeoPlayer({
   }, [videoId]);
 
   return (
-    <div className="relative w-full overflow-hidden rounded-[15px]" style={{ paddingTop: "46.21%" }}>
+    <div className="relative w-full overflow-hidden rounded-[15px]" style={{ paddingTop: "88.13%" }}>
       <iframe
         ref={frameRef}
-        src={`https://player.vimeo.com/video/${videoId}?badge=0&autopause=0&player_id=0&app_id=58479`}
+        src={`https://player.vimeo.com/video/${videoId}?h=317cb67d48&badge=0&autopause=0&player_id=0&app_id=58479`}
         allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
         referrerPolicy="strict-origin-when-cross-origin"
         title="Vídeo informativo"
