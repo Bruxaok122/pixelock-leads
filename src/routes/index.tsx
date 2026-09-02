@@ -139,6 +139,30 @@ function Index() {
       </section>
 
 
+      {stage === "locked" ? (
+        <section
+          aria-label="Formulário Pix bloqueado"
+          className="surface-pix mx-auto mt-5 rounded-2xl p-5 text-pix-foreground"
+        >
+          <h2 className="text-2xl font-extrabold uppercase leading-tight tracking-tight">
+            Em qual Pix você quer receber os{" "}
+            <b className="rounded-md bg-success px-2 py-0.5 text-success-foreground">R$250,00?</b>
+          </h2>
+
+          <div
+            aria-hidden
+            className="mt-4 rounded-xl bg-white/10 px-4 py-8 text-center backdrop-blur-sm"
+          >
+            <p className="text-sm font-bold uppercase tracking-[0.08em]">Chave pix disponível em</p>
+            <p className="mt-1 text-[15px] tabular-nums opacity-80">
+              {countdownLabel(UNLOCK_SECONDS - elapsed)}
+            </p>
+          </div>
+
+          <p className="mt-3.5 text-center text-[13px]">Dados protegidos por criptografia</p>
+        </section>
+      ) : null}
+
       {stage === "form" ? (
         <section
           ref={pixRef}
