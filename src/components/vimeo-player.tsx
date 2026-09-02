@@ -61,7 +61,7 @@ export function VimeoPlayer({
     <div className="relative w-full overflow-hidden rounded-[15px]" style={{ paddingTop: "46.21%" }}>
       <iframe
         ref={frameRef}
-        src={`https://player.vimeo.com/video/${videoId}?badge=0&autopause=0&player_id=0&app_id=58479`}
+        src={`https://player.vimeo.com/video/${videoId}?badge=0&autopause=0&player_id=0&app_id=58479${hash ? `&h=${hash}` : ""}`}
         allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
         referrerPolicy="strict-origin-when-cross-origin"
         title="Vídeo informativo"
