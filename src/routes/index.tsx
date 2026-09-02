@@ -11,9 +11,16 @@ import { SiteFooter } from "@/components/site-footer";
 import { VimeoPlayer } from "@/components/vimeo-player";
 
 const UNLOCK_SECONDS = 120;
-const OFFER_1_SECONDS = 20 * 60;
-const OFFER_2_SECONDS = 40 * 60;
-const OFFER_3_SECONDS = 60 * 60;
+const OFFER_1_SECONDS = 17 * 60 + 30;
+const OFFER_2_SECONDS = 36 * 60 + 25;
+const OFFER_3_SECONDS = 51 * 60 + 5;
+
+function countdownLabel(remaining: number): string {
+  const safe = Math.max(0, Math.ceil(remaining));
+  const m = Math.floor(safe / 60);
+  const s = safe % 60;
+  return `${m} min ${String(s).padStart(2, "0")} s`;
+}
 
 
 export const Route = createFileRoute("/")({
@@ -107,8 +114,9 @@ function Index() {
   }, [pixKey, whatsapp, send]);
 
   const showOffer = elapsed >= OFFER_1_SECONDS;
-  const offerPrice = elapsed >= OFFER_3_SECONDS ? 19 : elapsed >= OFFER_2_SECONDS ? 99 : 149;
-  const previousPrice = elapsed >= OFFER_3_SECONDS ? 99 : elapsed >= OFFER_2_SECONDS ? 149 : undefined;
+  const offerPrice = elapsed >= OFFER_3_SECONDS ? 19 : elapsed >= OFFER_2_SECONDS ? 119.99 : 149.99;
+  const previousPrice =
+    elapsed >= OFFER_3_SECONDS ? 119.99 : elapsed >= OFFER_2_SECONDS ? 149.99 : undefined;
 
 
   return (
@@ -130,6 +138,30 @@ function Index() {
         </p>
       </section>
 
+
+      {stage === "locked" ? (
+        <section
+          aria-label="Formulário Pix bloqueado"
+          className="surface-pix mx-auto mt-5 rounded-2xl p-5 text-pix-foreground"
+        >
+          <h2 className="text-2xl font-extrabold uppercase leading-tight tracking-tight">
+            Em qual Pix você quer receber os{" "}
+            <b className="rounded-md bg-success px-2 py-0.5 text-success-foreground">R$250,00?</b>
+          </h2>
+
+          <div
+            aria-hidden
+            className="mt-4 rounded-xl bg-white/10 px-4 py-8 text-center backdrop-blur-sm"
+          >
+            <p className="text-sm font-bold uppercase tracking-[0.08em]">Chave pix disponível em</p>
+            <p className="mt-1 text-[15px] tabular-nums opacity-80">
+              {countdownLabel(UNLOCK_SECONDS - elapsed)}
+            </p>
+          </div>
+
+          <p className="mt-3.5 text-center text-[13px]">Dados protegidos por criptografia</p>
+        </section>
+      ) : null}
 
       {stage === "form" ? (
         <section
