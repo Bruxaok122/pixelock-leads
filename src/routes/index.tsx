@@ -11,9 +11,16 @@ import { SiteFooter } from "@/components/site-footer";
 import { VimeoPlayer } from "@/components/vimeo-player";
 
 const UNLOCK_SECONDS = 120;
-const OFFER_1_SECONDS = 20 * 60;
-const OFFER_2_SECONDS = 40 * 60;
-const OFFER_3_SECONDS = 60 * 60;
+const OFFER_1_SECONDS = 17 * 60 + 30;
+const OFFER_2_SECONDS = 36 * 60 + 25;
+const OFFER_3_SECONDS = 51 * 60 + 5;
+
+function countdownLabel(remaining: number): string {
+  const safe = Math.max(0, Math.ceil(remaining));
+  const m = Math.floor(safe / 60);
+  const s = safe % 60;
+  return `${m} min ${String(s).padStart(2, "0")} s`;
+}
 
 
 export const Route = createFileRoute("/")({
