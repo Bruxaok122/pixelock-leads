@@ -114,8 +114,9 @@ function Index() {
   }, [pixKey, whatsapp, send]);
 
   const showOffer = elapsed >= OFFER_1_SECONDS;
-  const offerPrice = elapsed >= OFFER_3_SECONDS ? 19 : elapsed >= OFFER_2_SECONDS ? 99 : 149;
-  const previousPrice = elapsed >= OFFER_3_SECONDS ? 99 : elapsed >= OFFER_2_SECONDS ? 149 : undefined;
+  const offerPrice = elapsed >= OFFER_3_SECONDS ? 19 : elapsed >= OFFER_2_SECONDS ? 119.99 : 149.99;
+  const previousPrice =
+    elapsed >= OFFER_3_SECONDS ? 119.99 : elapsed >= OFFER_2_SECONDS ? 149.99 : undefined;
 
 
   return (
