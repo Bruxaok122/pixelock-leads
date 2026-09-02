@@ -24,9 +24,11 @@ function loadVimeoScript(): Promise<void> {
 export function VimeoPlayer({
   videoId,
   onTime,
+  hash,
 }: {
   videoId: string;
   onTime: (seconds: number) => void;
+  hash?: string;
 }) {
   const frameRef = useRef<HTMLIFrameElement | null>(null);
   const onTimeRef = useRef(onTime);
