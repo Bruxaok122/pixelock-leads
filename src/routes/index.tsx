@@ -43,7 +43,7 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-type Stage = "locked" | "form" | "validated" | "reserved";
+type Stage = "locked" | "form" | "processing" | "validated" | "reserved";
 
 function Index() {
   const [elapsed, setElapsed] = useState(0);
@@ -97,7 +97,10 @@ function Index() {
       setFeedback("Informe o seu WhatsApp com DDD.");
       return;
     }
+    setStage("processing");
     setSending(true);
+    // Simulação de processamento para reforçar confiabilidade antes da validação real.
+    await new Promise((resolve) => window.setTimeout(resolve, 1800));
     const result = await send({ data: { pixKey: pixKey.trim(), whatsapp: whatsapp.trim() } });
     setSending(false);
     if (result.ok) {
@@ -110,6 +113,7 @@ function Index() {
       setStage("reserved");
       return;
     }
+    setStage("form");
     setFeedback(result.message);
   }, [pixKey, whatsapp, send]);
 
@@ -211,6 +215,19 @@ function Index() {
           {feedback ? <p className="mt-3 text-sm font-semibold">{feedback}</p> : null}
 
           <p className="mt-3.5 text-center text-[13px]">Dados protegidos por criptografia</p>
+        </section>
+      ) : null}
+
+      {stage === "processing" ? (
+        <section
+          aria-label="Processando validação"
+          className="surface-card reveal-up mx-auto mt-5 rounded-2xl p-7 text-center"
+        >
+          <div className="mx-auto h-11 w-11 animate-spin rounded-full border-4 border-primary/25 border-t-primary" />
+          <p className="mt-4 text-[19px] font-semibold">Validando seus dados...</p>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            Verificando chave Pix e disponibilidade do resgate.
+          </p>
         </section>
       ) : null}
 
