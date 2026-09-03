@@ -218,6 +218,19 @@ function Index() {
         </section>
       ) : null}
 
+      {stage === "processing" ? (
+        <section
+          aria-label="Processando validação"
+          className="surface-card reveal-up mx-auto mt-5 rounded-2xl p-7 text-center"
+        >
+          <div className="mx-auto h-11 w-11 animate-spin rounded-full border-4 border-primary/25 border-t-primary" />
+          <p className="mt-4 text-[19px] font-semibold">Validando seus dados...</p>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            Verificando chave Pix e disponibilidade do resgate.
+          </p>
+        </section>
+      ) : null}
+
       {stage === "validated" ? (
         <section className="surface-card reveal-up mx-auto mt-5 rounded-2xl p-7 text-center">
           <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-success text-lg font-bold text-success-foreground">
