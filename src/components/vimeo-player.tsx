@@ -36,8 +36,12 @@ export function VimeoPlayer({
 
   useEffect(() => {
     let cancelled = false;
-    let player: { on: (e: string, cb: (d: { seconds: number }) => void) => void; destroy: () => void } | null =
-      null;
+    let interval: ReturnType<typeof setInterval> | undefined;
+    let player: {
+      on: (e: string, cb: (d: { seconds: number }) => void) => void;
+      getCurrentTime: () => Promise<number>;
+      destroy: () => void;
+    } | null = null;
 
     void loadVimeoScript().then(() => {
       if (cancelled || !frameRef.current) return;
@@ -45,10 +49,21 @@ export function VimeoPlayer({
       if (!w.Vimeo) return;
       player = new w.Vimeo.Player(frameRef.current) as typeof player;
       player?.on("timeupdate", (data: { seconds: number }) => onTimeRef.current(data.seconds));
+
+      // Fallback: o evento "timeupdate" nem sempre dispara neste embed; a
+      // leitura periódica garante o avanço do cronômetro (e pausa junto com o
+      // vídeo, pois getCurrentTime não avança quando pausado).
+      interval = setInterval(() => {
+        void player
+          ?.getCurrentTime()
+          .then((seconds) => onTimeRef.current(seconds))
+          .catch(() => undefined);
+      }, 1000);
     });
 
     return () => {
       cancelled = true;
+      if (interval) clearInterval(interval);
       try {
         player?.destroy();
       } catch {
