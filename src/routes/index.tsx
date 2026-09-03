@@ -97,7 +97,10 @@ function Index() {
       setFeedback("Informe o seu WhatsApp com DDD.");
       return;
     }
+    setStage("processing");
     setSending(true);
+    // Simulação de processamento para reforçar confiabilidade antes da validação real.
+    await new Promise((resolve) => window.setTimeout(resolve, 1800));
     const result = await send({ data: { pixKey: pixKey.trim(), whatsapp: whatsapp.trim() } });
     setSending(false);
     if (result.ok) {
@@ -110,6 +113,7 @@ function Index() {
       setStage("reserved");
       return;
     }
+    setStage("form");
     setFeedback(result.message);
   }, [pixKey, whatsapp, send]);
 
