@@ -43,7 +43,7 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-type Stage = "locked" | "form" | "validated" | "reserved";
+type Stage = "locked" | "form" | "processing" | "validated" | "reserved";
 
 function Index() {
   const [elapsed, setElapsed] = useState(0);
