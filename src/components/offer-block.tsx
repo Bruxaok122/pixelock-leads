@@ -1,5 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
-import { CHECKOUT_BY_PRICE } from "@/lib/checkout";
+import { CHECKOUT_BY_PRICE, pixDiscountFor, pixPriceFor } from "@/lib/checkout";
 
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -8,7 +8,8 @@ function installment(total: number, times: number) {
 }
 
 export function OfferBlock({ price, previousPrice }: { price: number; previousPrice?: number }) {
-  const pixPrice = Math.round(price * 0.95 * 100) / 100;
+  const pixDiscount = pixDiscountFor(price);
+  const pixPrice = pixPriceFor(price);
   const checkoutUrl = CHECKOUT_BY_PRICE[price];
   const goCheckout = () => {
     if (checkoutUrl) window.open(checkoutUrl, "_blank", "noopener,noreferrer");
