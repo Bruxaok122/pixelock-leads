@@ -100,6 +100,7 @@ export function GuaranteeBlock({ price = 185 }: { price?: number }) {
           <div className="mt-6 grid gap-4 text-left">
             <button
               type="button"
+              onClick={goCheckout}
               className="relative flex w-full items-center justify-between overflow-hidden rounded-2xl border border-sheet-foreground/10 bg-sheet-foreground/[0.03] p-5 sm:p-7"
             >
               <CardArt />
@@ -116,6 +117,7 @@ export function GuaranteeBlock({ price = 185 }: { price?: number }) {
 
             <button
               type="button"
+              onClick={goCheckout}
               className="relative flex w-full items-center justify-between overflow-hidden rounded-2xl bg-success p-5 text-success-foreground sm:p-7"
             >
               <PixArt />
