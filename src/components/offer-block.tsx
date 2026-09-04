@@ -30,6 +30,7 @@ export function OfferBlock({ price, previousPrice }: { price: number; previousPr
       <div className="mt-4 grid gap-3">
         <button
           type="button"
+          onClick={goCheckout}
           className="surface-card flex w-full items-center justify-between rounded-2xl p-5 text-left"
         >
           <span className="block">
@@ -48,6 +49,7 @@ export function OfferBlock({ price, previousPrice }: { price: number; previousPr
 
         <button
           type="button"
+          onClick={goCheckout}
           className="flex w-full items-center justify-between rounded-2xl bg-success p-5 text-left text-success-foreground"
         >
           <span className="block">
