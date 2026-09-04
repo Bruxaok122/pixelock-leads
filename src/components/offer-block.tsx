@@ -1,5 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
-import { CHECKOUT_BY_PRICE } from "@/lib/checkout";
+import { CHECKOUT_BY_PRICE, pixDiscountFor, pixPriceFor } from "@/lib/checkout";
 
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -8,7 +8,8 @@ function installment(total: number, times: number) {
 }
 
 export function OfferBlock({ price, previousPrice }: { price: number; previousPrice?: number }) {
-  const pixPrice = Math.round(price * 0.95 * 100) / 100;
+  const pixDiscount = pixDiscountFor(price);
+  const pixPrice = pixPriceFor(price);
   const checkoutUrl = CHECKOUT_BY_PRICE[price];
   const goCheckout = () => {
     if (checkoutUrl) window.open(checkoutUrl, "_blank", "noopener,noreferrer");
@@ -54,7 +55,9 @@ export function OfferBlock({ price, previousPrice }: { price: number; previousPr
         >
           <span className="block">
             <span className="block text-[13px] uppercase tracking-[0.12em] opacity-90">Pix</span>
-            <span className="mt-1 block text-[26px] font-extrabold tracking-tight">5% de desconto</span>
+            <span className="mt-1 block text-[26px] font-extrabold tracking-tight">
+              {Math.round(pixDiscount * 100)}% de desconto
+            </span>
             <span className="mt-1 block text-xs opacity-90">{brl.format(pixPrice)} à vista no Pix</span>
           </span>
           <ArrowUpRight className="h-6 w-6 shrink-0" aria-hidden />

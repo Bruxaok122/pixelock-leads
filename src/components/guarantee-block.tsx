@@ -1,5 +1,5 @@
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
-import { CHECKOUT_BY_PRICE } from "@/lib/checkout";
+import { CHECKOUT_BY_PRICE, pixDiscountFor, pixPriceFor } from "@/lib/checkout";
 import selo from "@/assets/selo-garantia-30-dias.png";
 
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -46,7 +46,8 @@ function PixArt() {
 
 export function GuaranteeBlock({ price = 185 }: { price?: number }) {
   const parcela = brl.format(Math.round((price / 12) * 100) / 100);
-  const pixPrice = Math.round(price * 0.95 * 100) / 100;
+  const pixDiscount = pixDiscountFor(price);
+  const pixPrice = pixPriceFor(price);
   const checkoutUrl = CHECKOUT_BY_PRICE[price];
   const goCheckout = () => {
     if (checkoutUrl) window.open(checkoutUrl, "_blank", "noopener,noreferrer");
@@ -126,7 +127,7 @@ export function GuaranteeBlock({ price = 185 }: { price?: number }) {
                   Pix
                 </span>
                 <span className="mt-1 block text-[26px] uppercase tracking-tight sm:text-[38px]">
-                  5% de desconto
+                  {Math.round(pixDiscount * 100)}% de desconto
                 </span>
                 <span className="mt-0.5 block text-[12px] uppercase opacity-80">
                   {brl.format(pixPrice)} à vista
