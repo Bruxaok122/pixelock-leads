@@ -1,4 +1,5 @@
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
+import { CHECKOUT_BY_PRICE } from "@/lib/checkout";
 import selo from "@/assets/selo-garantia-30-dias.png";
 
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -46,6 +47,10 @@ function PixArt() {
 export function GuaranteeBlock({ price = 185 }: { price?: number }) {
   const parcela = brl.format(Math.round((price / 12) * 100) / 100);
   const pixPrice = Math.round(price * 0.95 * 100) / 100;
+  const checkoutUrl = CHECKOUT_BY_PRICE[price];
+  const goCheckout = () => {
+    if (checkoutUrl) window.open(checkoutUrl, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <section
