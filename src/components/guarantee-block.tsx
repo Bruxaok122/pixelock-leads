@@ -127,7 +127,7 @@ export function GuaranteeBlock({ price = 185 }: { price?: number }) {
                   Pix
                 </span>
                 <span className="mt-1 block text-[26px] uppercase tracking-tight sm:text-[38px]">
-                  5% de desconto
+                  {Math.round(pixDiscount * 100)}% de desconto
                 </span>
                 <span className="mt-0.5 block text-[12px] uppercase opacity-80">
                   {brl.format(pixPrice)} à vista

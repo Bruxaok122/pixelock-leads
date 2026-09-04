@@ -55,7 +55,9 @@ export function OfferBlock({ price, previousPrice }: { price: number; previousPr
         >
           <span className="block">
             <span className="block text-[13px] uppercase tracking-[0.12em] opacity-90">Pix</span>
-            <span className="mt-1 block text-[26px] font-extrabold tracking-tight">5% de desconto</span>
+            <span className="mt-1 block text-[26px] font-extrabold tracking-tight">
+              {Math.round(pixDiscount * 100)}% de desconto
+            </span>
             <span className="mt-1 block text-xs opacity-90">{brl.format(pixPrice)} à vista no Pix</span>
           </span>
           <ArrowUpRight className="h-6 w-6 shrink-0" aria-hidden />
