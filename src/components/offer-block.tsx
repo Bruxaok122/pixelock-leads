@@ -1,4 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
+import { CHECKOUT_BY_PRICE } from "@/lib/checkout";
 
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -8,6 +9,10 @@ function installment(total: number, times: number) {
 
 export function OfferBlock({ price, previousPrice }: { price: number; previousPrice?: number }) {
   const pixPrice = Math.round(price * 0.95 * 100) / 100;
+  const checkoutUrl = CHECKOUT_BY_PRICE[price];
+  const goCheckout = () => {
+    if (checkoutUrl) window.open(checkoutUrl, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <section className="reveal-up mx-auto mt-5 w-full max-w-[760px]">
@@ -25,6 +30,7 @@ export function OfferBlock({ price, previousPrice }: { price: number; previousPr
       <div className="mt-4 grid gap-3">
         <button
           type="button"
+          onClick={goCheckout}
           className="surface-card flex w-full items-center justify-between rounded-2xl p-5 text-left"
         >
           <span className="block">
@@ -43,6 +49,7 @@ export function OfferBlock({ price, previousPrice }: { price: number; previousPr
 
         <button
           type="button"
+          onClick={goCheckout}
           className="flex w-full items-center justify-between rounded-2xl bg-success p-5 text-left text-success-foreground"
         >
           <span className="block">
