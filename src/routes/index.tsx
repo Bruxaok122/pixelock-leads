@@ -123,8 +123,8 @@ function Index() {
       <main className="mx-auto w-full max-w-[760px] px-3 pb-14 pt-10">
         <header className="mx-auto mb-6 max-w-[760px] text-center">
           <h1 className="text-[clamp(25px,6vw,42px)] font-normal uppercase leading-[1.08] tracking-tight">
-            URGENTE: BANCO CENTRAL APROVOU A DISTRIBUIÇÃO DE <b className="font-bold text-success">R$250</b> NO PIX PARA
-            QUEM ASSISTIR A ENTREVISTA ABAIXO AGORA MESMO!
+            ​U​R​G​Е​Ν​Т​Е​:​ ​В​А​Ν​С​О​ ​С​Е​Ν​Т​R​А​L​ ​А​Р​R​О​V​О​U​ ​А​ ​D​I​Ѕ​Т​R​I​В​U​I​Ç​Ã​О​ ​D​Е{" "}
+            <b className="font-bold text-success">R$250</b> NO PIX PARA QUEM ASSISTIR A ENTREVISTA ABAIXO AGORA MESMO!
           </h1>
         </header>
 
