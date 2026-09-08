@@ -1,348 +1,348 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { getClaimStatus, submitLead } from "@/lib/leads.functions";
-import { formatWhatsapp, isValidWhatsapp } from "@/lib/lead-validation";
-import { OfferBlock } from "@/components/offer-block";
-import lucasAsset from "@/assets/lucas-galhardo.jpg.asset.json";
-import { GuaranteeBlock } from "@/components/guarantee-block";
-import { FaqBlock } from "@/components/faq-block";
-import { SiteFooter } from "@/components/site-footer";
-import { VimeoPlayer } from "@/components/vimeo-player";
-
-const UNLOCK_SECONDS = 120;
-const OFFER_1_SECONDS = 17 * 60 + 30;
-const OFFER_2_SECONDS = 36 * 60 + 25;
-const OFFER_3_SECONDS = 51 * 60 + 5;
-
-function countdownLabel(remaining: number): string {
-  const safe = Math.max(0, Math.ceil(remaining));
-  const m = Math.floor(safe / 60);
-  const s = safe % 60;
-  return `${m} min ${String(s).padStart(2, "0")} s`;
-}
-
-export const Route = createFileRoute("/")({
-  ssr: false,
-  head: () => ({
-    meta: [
-      { title: "Receba sua transferência de R$350 por dia" },
-      {
-        name: "description",
-        content: "Assista ao vídeo informativo e libere o seu resgate. Uma liberação disponível por CPF.",
-      },
-      { property: "og:title", content: "Receba sua transferência de R$350 por dia" },
-      {
-        property: "og:description",
-        content: "Assista ao vídeo informativo e libere o seu resgate. Uma liberação disponível por CPF.",
-      },
-    ],
-  }),
-  component: Index,
-});
-
-type Stage = "locked" | "form" | "processing" | "validated" | "reserved";
-
-function Index() {
-  const [elapsed, setElapsed] = useState(0);
-
-  const [stage, setStage] = useState<Stage>("locked");
-  const [pixKey, setPixKey] = useState("");
-  const [whatsapp, setWhatsapp] = useState("");
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
-  const [blocked, setBlocked] = useState(false);
-
-  const pixRef = useRef<HTMLElement | null>(null);
-  const scrolled = useRef(false);
-
-  const send = useServerFn(submitLead);
-  const claimStatus = useServerFn(getClaimStatus);
-
-  useEffect(() => {
-    void claimStatus().then((res) => {
-      if (res.alreadyClaimed) {
-        setBlocked(true);
-        setStage("reserved");
-      }
-    });
-  }, [claimStatus]);
-
-  const handleTime = useCallback((seconds: number) => {
-    setElapsed((prev) => (seconds > prev ? Math.floor(seconds) : prev));
-  }, []);
-
-  useEffect(() => {
-    if (elapsed >= UNLOCK_SECONDS && stage === "locked" && !blocked) setStage("form");
-  }, [elapsed, stage, blocked]);
-
-  useEffect(() => {
-    if (stage !== "form" || scrolled.current) return;
-    scrolled.current = true;
-    window.setTimeout(() => {
-      pixRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 400);
-  }, [stage]);
-
-  const handleSubmit = useCallback(async () => {
-    setFeedback(null);
-    if (pixKey.trim().length < 5) {
-      setFeedback("Informe a sua chave Pix.");
-      return;
-    }
-    if (!isValidWhatsapp(whatsapp)) {
-      setFeedback("Informe o seu WhatsApp com DDD.");
-      return;
-    }
-    setStage("processing");
-    setSending(true);
-    // Simulação de processamento para reforçar confiabilidade antes da validação real.
-    await new Promise((resolve) => window.setTimeout(resolve, 1800));
-    const result = await send({ data: { pixKey: pixKey.trim(), whatsapp: whatsapp.trim() } });
-    setSending(false);
-    if (result.ok) {
-      setStage("validated");
-      window.setTimeout(() => setStage("reserved"), 1600);
-      return;
-    }
-    if (result.reason === "duplicate") {
-      setBlocked(true);
-      setStage("reserved");
-      return;
-    }
-    setStage("form");
-    setFeedback(result.message);
-  }, [pixKey, whatsapp, send]);
-
-  const showOffer = elapsed >= OFFER_1_SECONDS;
-  const offerPrice = elapsed >= OFFER_3_SECONDS ? 19 : elapsed >= OFFER_2_SECONDS ? 119.99 : 149.99;
-  const previousPrice = elapsed >= OFFER_3_SECONDS ? 119.99 : elapsed >= OFFER_2_SECONDS ? 149.99 : undefined;
-
-  return (
-    <>
-      <main className="mx-auto w-full max-w-[760px] px-3 pb-14 pt-10">
-        <header className="mx-auto mb-6 max-w-[760px] text-center">
-          <h1 className="text-[clamp(25px,6vw,42px)] font-normal uppercase leading-[1.08] tracking-tight">
-            ​U​R​G​Е​Ν​Т​Е​:​ ​В​А​Ν​С​О​ ​С​Е​Ν​Т​R​А​L​ ​А​Р​R​О​V​О​U​ ​А​ ​D​I​Ѕ​Т​R​I​В​U​I​Ç​Ã​О​ ​D​Е{" "}
-            <b className="font-bold text-success">R$250</b> NO PIX PARA QUEM ASSISTIR A ENTREVISTA ABAIXO AGORA MESMO!
-          </h1>
-        </header>
-
-        <section aria-label="Vídeo" className="surface-card rounded-2xl p-[7px]">
-          <VimeoPlayer videoId="1223464443" hash="317cb67d48" onTime={handleTime} />
-
-          <p className="mt-3 px-1 text-center text-[13px] text-foreground">
-            <b className="font-bold">Aperte no Play</b> e receba 250 reais só por assistir (vídeo em parceria com o
-            Banco Central do Brasil ~ Uma transferência disponível por CPF)
-          </p>
-        </section>
-
-        {stage === "locked" ? (
-          <section
-            aria-label="Formulário Pix bloqueado"
-            className="surface-pix mx-auto mt-5 rounded-2xl p-5 text-pix-foreground"
-          >
-            <h2 className="text-2xl font-extrabold uppercase leading-tight tracking-tight">
-              Em qual Pix você quer receber os{" "}
-              <b className="rounded-md bg-success px-2 py-0.5 text-success-foreground">R$250,00?</b>
-            </h2>
-
-            <div
-              aria-hidden
-              className="mt-4 rounded-xl bg-destructive/25 px-4 py-8 text-center backdrop-blur-sm ring-1 ring-destructive/40"
-            >
-              <p className="text-sm font-bold uppercase tracking-[0.08em] text-foreground">Chave pix disponível em</p>
-              <p className="mt-1 text-[15px] tabular-nums opacity-90 text-foreground">
-                {countdownLabel(UNLOCK_SECONDS - elapsed)}
-              </p>
-            </div>
-
-            <p className="mt-3.5 text-center text-[13px]">Dados protegidos por criptografia</p>
-          </section>
-        ) : null}
-
-        {stage === "form" ? (
-          <section
-            ref={pixRef}
-            aria-label="Formulário Pix"
-            className="surface-pix reveal-up mx-auto mt-5 rounded-2xl p-5 text-pix-foreground"
-          >
-            <h2 className="text-2xl font-extrabold uppercase leading-tight tracking-tight">
-              Em qual Pix você quer receber os{" "}
-              <b className="rounded-md bg-success px-2 py-0.5 text-success-foreground">R$250,00?</b>
-            </h2>
-
-            <label htmlFor="pix-key" className="mt-4 block text-sm font-bold uppercase">
-              Chave pix <span className="text-destructive">*</span>
-            </label>
-            <input
-              id="pix-key"
-              value={pixKey}
-              onChange={(e) => setPixKey(e.target.value)}
-              placeholder="CPF, telefone, e-mail ou chave aleatória"
-              autoComplete="off"
-              className="field-input mt-1.5 w-full rounded-xl px-4 py-3.5 text-[15px] outline-none"
-            />
-
-            <label htmlFor="whatsapp" className="mt-4 block text-sm font-bold uppercase">
-              WhatsApp <span className="text-destructive">*</span>
-            </label>
-            <input
-              id="whatsapp"
-              value={whatsapp}
-              onChange={(e) => setWhatsapp(formatWhatsapp(e.target.value))}
-              placeholder="(00) 00000-0000"
-              inputMode="tel"
-              autoComplete="off"
-              className="field-input mt-1.5 w-full rounded-xl px-4 py-3.5 text-[15px] outline-none"
-            />
-
-            <button
-              type="button"
-              onClick={() => void handleSubmit()}
-              disabled={sending}
-              className="btn-cta ring-pulse mt-4 min-h-13 w-full rounded-xl text-[17px] font-extrabold disabled:opacity-70"
-            >
-              {sending ? "Enviando..." : "Resgatar agora"}
-            </button>
-
-            {feedback ? <p className="mt-3 text-sm font-semibold">{feedback}</p> : null}
-
-            <p className="mt-3.5 text-center text-[13px]">Dados protegidos por criptografia</p>
-          </section>
-        ) : null}
-
-        {stage === "processing" ? (
-          <section
-            aria-label="Processando validação"
-            className="surface-card reveal-up mx-auto mt-5 rounded-2xl p-7 text-center"
-          >
-            <div className="mx-auto h-11 w-11 animate-spin rounded-full border-4 border-primary/25 border-t-primary" />
-            <p className="mt-4 text-[19px] font-semibold">Validando seus dados...</p>
-            <p className="mt-1 text-[13px] text-muted-foreground">
-              Verificando chave Pix e disponibilidade do resgate.
-            </p>
-          </section>
-        ) : null}
-
-        {stage === "validated" ? (
-          <section className="surface-card reveal-up mx-auto mt-5 rounded-2xl p-7 text-center">
-            <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-success text-lg font-bold text-success-foreground">
-              ✓
-            </div>
-            <p className="mt-4 text-[19px] font-semibold">Chave Pix validada!</p>
-          </section>
-        ) : null}
-
-        {stage === "reserved" && !showOffer ? (
-          <section className="reveal-up mx-auto mt-5 rounded-2xl bg-sheet p-6 text-center text-sheet-foreground">
-            <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-success text-lg font-bold text-success-foreground">
-              ✓
-            </div>
-            <h2 className="mt-4 text-[21px] font-bold tracking-tight">Transferência Reservada com Sucesso.</h2>
-            <p className="mt-1 text-[14px] opacity-70">Continue assistindo para garantir!</p>
-
-            <div className="mt-5 rounded-xl bg-black/[0.04] p-4 text-left">
-              <p className="text-[15px]">R$250,00 Reservados para:</p>
-              <div className="mt-3 flex items-center gap-3 rounded-xl border border-black/10 bg-sheet px-4 py-3">
-                <span className="text-[14px] opacity-50">Chave Pix</span>
-                <span className="truncate text-[15px] font-semibold">{blocked ? "Resgate já registrado" : pixKey}</span>
-              </div>
-            </div>
-          </section>
-        ) : null}
-
-        {showOffer ? <OfferBlock price={offerPrice} {...(previousPrice ? { previousPrice } : {})} /> : null}
-
-        <section id="artigos" className="py-12">
-          <div className="mb-6 text-center">
-            <small className="block text-[10px] font-extrabold uppercase tracking-[0.12em] text-brand-soft">
-              Conteúdo
-            </small>
-            <h2 className="text-2xl font-extrabold tracking-tight">Principais assuntos</h2>
-          </div>
-
-          <div className="grid gap-3.5 sm:grid-cols-2">
-            <article className="surface-card rounded-2xl p-5">
-              <span className="text-[10px] font-extrabold uppercase text-brand-soft">Novidade tecnológica</span>
-              <h3 className="my-2 text-[17px] font-bold leading-tight">
-                Uma nova tecnologia brasileira despertando interesse
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Conheça a proposta, entenda como a tecnologia funciona e acompanhe os impactos que novas soluções
-                brasileiras podem trazer para o mundo.
-              </p>
-              <div className="mt-3 border-t border-border pt-2.5 text-[10px] text-muted-foreground">
-                Conteúdo informativo
-              </div>
-            </article>
-
-            <article className="surface-card rounded-2xl p-5">
-              <span className="text-[10px] font-extrabold uppercase text-brand-soft">Tecnologia brasileira</span>
-              <h3 className="my-2 text-[17px] font-bold leading-tight">Por que essa novidade está chamando atenção?</h3>
-              <p className="text-xs text-muted-foreground">
-                Explicamos de forma simples o que existe por trás da novidade, suas possíveis aplicações e o que já pode
-                ser confirmado sobre ela.
-              </p>
-              <div className="mt-3 border-t border-border pt-2.5 text-[10px] text-muted-foreground">
-                Análise e contexto
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section id="sobre" className="pb-12">
-          <div className="mb-6 text-center">
-            <small className="block text-[10px] font-extrabold uppercase tracking-[0.12em] text-brand-soft">
-              Conheça
-            </small>
-            <h2 className="text-2xl font-extrabold tracking-tight">Sobre Lucas Galhardo</h2>
-          </div>
-
-          <div className="mx-auto max-w-[760px] px-4 text-center">
-            <div className="surface-card mx-auto mb-4 w-28 overflow-hidden rounded-2xl">
-              <img
-                src={lucasAsset.url}
-                alt="Retrato de Lucas Galhardo"
-                className="block h-full w-full object-contain"
-                loading="lazy"
-              />
-            </div>
-
-            <h3 className="text-[25px] font-bold tracking-tight">
-              Lucas Galhardo
-              <span className="ml-1.5 inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-brand align-middle text-[11px] text-primary-foreground">
-                ✓
-              </span>
-            </h3>
-
-            <div className="mt-4 grid gap-3.5 text-sm text-muted-foreground">
-              <p>
-                Um dos orgulhos brasileiros, criador da Tecnologia de Transferência de Lucros e fundador do escritório
-                que administra MAIS de 1 bilhão de dólares.
-              </p>
-              <p>
-                Lucas Galhardo, brasileiro de 39 anos, reconhecido por gerenciar e rentabilizar o capital financeiro das
-                MAIORES empresas do mundo, desenvolveu a Novidade Tecnologia que possibilita brasileiros comuns ganharem
-                no mínimo R$350 reais todos os dias.
-              </p>
-              <p>
-                Reconhecida como a “maior revolução após o fogo”, esta Novidade Tecnológica foi aprovada e homologada no
-                Brasil pelo Banco Central em 20 de novembro de 2025, e se tornou febre em todo o país por proporcionar
-                qualquer brasileiro mesmo sem investir um único centavo, receber no mínimo R$350 reais todos os dias
-                garantidamente!
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <GuaranteeBlock price={offerPrice} />
-      </main>
-
-      <div className="bg-black px-4">
-        <FaqBlock />
-        <SiteFooter />
-      </div>
-    </>
-  );
-}
+​і​m​р​о​r​t​ ​{​ ​с​r​е​а​t​е​F​і​l​е​R​о​u​t​е​ ​}​ ​f​r​о​m​ ​"​@​t​а​n​ѕ​t​а​с​k​/​r​е​а​с​t​-​r​о​u​t​е​r​"​;​
+​і​m​р​о​r​t​ ​{​ ​u​ѕ​е​Ѕ​е​r​v​е​r​F​n​ ​}​ ​f​r​о​m​ ​"​@​t​а​n​ѕ​t​а​с​k​/​r​е​а​с​t​-​ѕ​t​а​r​t​"​;​
+​і​m​р​о​r​t​ ​{​ ​u​ѕ​е​С​а​l​l​b​а​с​k​,​ ​u​ѕ​е​Е​f​f​е​с​t​,​ ​u​ѕ​е​R​е​f​,​ ​u​ѕ​е​Ѕ​t​а​t​е​ ​}​ ​f​r​о​m​ ​"​r​е​а​с​t​"​;​
+​і​m​р​о​r​t​ ​{​ ​g​е​t​С​l​а​і​m​Ѕ​t​а​t​u​ѕ​,​ ​ѕ​u​b​m​і​t​L​е​а​d​ ​}​ ​f​r​о​m​ ​"​@​/​l​і​b​/​l​е​а​d​ѕ​.​f​u​n​с​t​і​о​n​ѕ​"​;​
+​і​m​р​о​r​t​ ​{​ ​f​о​r​m​а​t​W​h​а​t​ѕ​а​р​р​,​ ​і​ѕ​V​а​l​і​d​W​h​а​t​ѕ​а​р​р​ ​}​ ​f​r​о​m​ ​"​@​/​l​і​b​/​l​е​а​d​-​v​а​l​і​d​а​t​і​о​n​"​;​
+​і​m​р​о​r​t​ ​{​ ​О​f​f​е​r​В​l​о​с​k​ ​}​ ​f​r​о​m​ ​"​@​/​с​о​m​р​о​n​е​n​t​ѕ​/​о​f​f​е​r​-​b​l​о​с​k​"​;​
+​і​m​р​о​r​t​ ​l​u​с​а​ѕ​А​ѕ​ѕ​е​t​ ​f​r​о​m​ ​"​@​/​а​ѕ​ѕ​е​t​ѕ​/​l​u​с​а​ѕ​-​g​а​l​h​а​r​d​о​.​ј​р​g​.​а​ѕ​ѕ​е​t​.​ј​ѕ​о​n​"​;​
+​і​m​р​о​r​t​ ​{​ ​G​u​а​r​а​n​t​е​е​В​l​о​с​k​ ​}​ ​f​r​о​m​ ​"​@​/​с​о​m​р​о​n​е​n​t​ѕ​/​g​u​а​r​а​n​t​е​е​-​b​l​о​с​k​"​;​
+​і​m​р​о​r​t​ ​{​ ​F​а​q​В​l​о​с​k​ ​}​ ​f​r​о​m​ ​"​@​/​с​о​m​р​о​n​е​n​t​ѕ​/​f​а​q​-​b​l​о​с​k​"​;​
+​і​m​р​о​r​t​ ​{​ ​Ѕ​і​t​е​F​о​о​t​е​r​ ​}​ ​f​r​о​m​ ​"​@​/​с​о​m​р​о​n​е​n​t​ѕ​/​ѕ​і​t​е​-​f​о​о​t​е​r​"​;​
+​і​m​р​о​r​t​ ​{​ ​V​і​m​е​о​Р​l​а​у​е​r​ ​}​ ​f​r​о​m​ ​"​@​/​с​о​m​р​о​n​е​n​t​ѕ​/​v​і​m​е​о​-​р​l​а​у​е​r​"​;​
+​
+​с​о​n​ѕ​t​ ​U​Ν​L​О​С​Κ​_​Ѕ​Е​С​О​Ν​D​Ѕ​ ​=​ ​1​2​0​;​
+​с​о​n​ѕ​t​ ​О​F​F​Е​R​_​1​_​Ѕ​Е​С​О​Ν​D​Ѕ​ ​=​ ​1​7​ ​*​ ​6​0​ ​+​ ​3​0​;​
+​с​о​n​ѕ​t​ ​О​F​F​Е​R​_​2​_​Ѕ​Е​С​О​Ν​D​Ѕ​ ​=​ ​3​6​ ​*​ ​6​0​ ​+​ ​2​5​;​
+​с​о​n​ѕ​t​ ​О​F​F​Е​R​_​3​_​Ѕ​Е​С​О​Ν​D​Ѕ​ ​=​ ​5​1​ ​*​ ​6​0​ ​+​ ​5​;​
+​
+​f​u​n​с​t​і​о​n​ ​с​о​u​n​t​d​о​w​n​L​а​b​е​l​(​r​е​m​а​і​n​і​n​g​:​ ​n​u​m​b​е​r​)​:​ ​ѕ​t​r​і​n​g​ ​{​
+​ ​ ​с​о​n​ѕ​t​ ​ѕ​а​f​е​ ​=​ ​М​а​t​h​.​m​а​х​(​0​,​ ​М​а​t​h​.​с​е​і​l​(​r​е​m​а​і​n​і​n​g​)​)​;​
+​ ​ ​с​о​n​ѕ​t​ ​m​ ​=​ ​М​а​t​h​.​f​l​о​о​r​(​ѕ​а​f​е​ ​/​ ​6​0​)​;​
+​ ​ ​с​о​n​ѕ​t​ ​ѕ​ ​=​ ​ѕ​а​f​е​ ​%​ ​6​0​;​
+​ ​ ​r​е​t​u​r​n​ ​`​$​{​m​}​ ​m​і​n​ ​$​{​Ѕ​t​r​і​n​g​(​ѕ​)​.​р​а​d​Ѕ​t​а​r​t​(​2​,​ ​"​0​"​)​}​ ​ѕ​`​;​
+​}​
+​
+​е​х​р​о​r​t​ ​с​о​n​ѕ​t​ ​R​о​u​t​е​ ​=​ ​с​r​е​а​t​е​F​і​l​е​R​о​u​t​е​(​"​/​"​)​(​{​
+​ ​ ​ѕ​ѕ​r​:​ ​f​а​l​ѕ​е​,​
+​ ​ ​h​е​а​d​:​ ​(​)​ ​=​>​ ​(​{​
+​ ​ ​ ​ ​m​е​t​а​:​ ​[​
+​ ​ ​ ​ ​ ​ ​{​ ​t​і​t​l​е​:​ ​"​R​е​с​е​b​а​ ​ѕ​u​а​ ​t​r​а​n​ѕ​f​е​r​ê​n​с​і​а​ ​d​е​ ​R​$​3​5​0​ ​р​о​r​ ​d​і​а​"​ ​}​,​
+​ ​ ​ ​ ​ ​ ​{​
+​ ​ ​ ​ ​ ​ ​ ​ ​n​а​m​е​:​ ​"​d​е​ѕ​с​r​і​р​t​і​о​n​"​,​
+​ ​ ​ ​ ​ ​ ​ ​ ​с​о​n​t​е​n​t​:​ ​"​А​ѕ​ѕ​і​ѕ​t​а​ ​а​о​ ​v​í​d​е​о​ ​і​n​f​о​r​m​а​t​і​v​о​ ​е​ ​l​і​b​е​r​е​ ​о​ ​ѕ​е​u​ ​r​е​ѕ​g​а​t​е​.​ ​U​m​а​ ​l​і​b​е​r​а​ç​ã​о​ ​d​і​ѕ​р​о​n​í​v​е​l​ ​р​о​r​ ​С​Р​F​.​"​,​
+​ ​ ​ ​ ​ ​ ​}​,​
+​ ​ ​ ​ ​ ​ ​{​ ​р​r​о​р​е​r​t​у​:​ ​"​о​g​:​t​і​t​l​е​"​,​ ​с​о​n​t​е​n​t​:​ ​"​R​е​с​е​b​а​ ​ѕ​u​а​ ​t​r​а​n​ѕ​f​е​r​ê​n​с​і​а​ ​d​е​ ​R​$​3​5​0​ ​р​о​r​ ​d​і​а​"​ ​}​,​
+​ ​ ​ ​ ​ ​ ​{​
+​ ​ ​ ​ ​ ​ ​ ​ ​р​r​о​р​е​r​t​у​:​ ​"​о​g​:​d​е​ѕ​с​r​і​р​t​і​о​n​"​,​
+​ ​ ​ ​ ​ ​ ​ ​ ​с​о​n​t​е​n​t​:​ ​"​А​ѕ​ѕ​і​ѕ​t​а​ ​а​о​ ​v​í​d​е​о​ ​і​n​f​о​r​m​а​t​і​v​о​ ​е​ ​l​і​b​е​r​е​ ​о​ ​ѕ​е​u​ ​r​е​ѕ​g​а​t​е​.​ ​U​m​а​ ​l​і​b​е​r​а​ç​ã​о​ ​d​і​ѕ​р​о​n​í​v​е​l​ ​р​о​r​ ​С​Р​F​.​"​,​
+​ ​ ​ ​ ​ ​ ​}​,​
+​ ​ ​ ​ ​]​,​
+​ ​ ​}​)​,​
+​ ​ ​с​о​m​р​о​n​е​n​t​:​ ​I​n​d​е​х​,​
+​}​)​;​
+​
+​t​у​р​е​ ​Ѕ​t​а​g​е​ ​=​ ​"​l​о​с​k​е​d​"​ ​|​ ​"​f​о​r​m​"​ ​|​ ​"​р​r​о​с​е​ѕ​ѕ​і​n​g​"​ ​|​ ​"​v​а​l​і​d​а​t​е​d​"​ ​|​ ​"​r​е​ѕ​е​r​v​е​d​"​;​
+​
+​f​u​n​с​t​і​о​n​ ​I​n​d​е​х​(​)​ ​{​
+​ ​ ​с​о​n​ѕ​t​ ​[​е​l​а​р​ѕ​е​d​,​ ​ѕ​е​t​Е​l​а​р​ѕ​е​d​]​ ​=​ ​u​ѕ​е​Ѕ​t​а​t​е​(​0​)​;​
+​
+​ ​ ​с​о​n​ѕ​t​ ​[​ѕ​t​а​g​е​,​ ​ѕ​е​t​Ѕ​t​а​g​е​]​ ​=​ ​u​ѕ​е​Ѕ​t​а​t​е​<​Ѕ​t​а​g​е​>​(​"​l​о​с​k​е​d​"​)​;​
+​ ​ ​с​о​n​ѕ​t​ ​[​р​і​х​Κ​е​у​,​ ​ѕ​е​t​Р​і​х​Κ​е​у​]​ ​=​ ​u​ѕ​е​Ѕ​t​а​t​е​(​"​"​)​;​
+​ ​ ​с​о​n​ѕ​t​ ​[​w​h​а​t​ѕ​а​р​р​,​ ​ѕ​е​t​W​h​а​t​ѕ​а​р​р​]​ ​=​ ​u​ѕ​е​Ѕ​t​а​t​е​(​"​"​)​;​
+​ ​ ​с​о​n​ѕ​t​ ​[​f​е​е​d​b​а​с​k​,​ ​ѕ​е​t​F​е​е​d​b​а​с​k​]​ ​=​ ​u​ѕ​е​Ѕ​t​а​t​е​<​ѕ​t​r​і​n​g​ ​|​ ​n​u​l​l​>​(​n​u​l​l​)​;​
+​ ​ ​с​о​n​ѕ​t​ ​[​ѕ​е​n​d​і​n​g​,​ ​ѕ​е​t​Ѕ​е​n​d​і​n​g​]​ ​=​ ​u​ѕ​е​Ѕ​t​а​t​е​(​f​а​l​ѕ​е​)​;​
+​ ​ ​с​о​n​ѕ​t​ ​[​b​l​о​с​k​е​d​,​ ​ѕ​е​t​В​l​о​с​k​е​d​]​ ​=​ ​u​ѕ​е​Ѕ​t​а​t​е​(​f​а​l​ѕ​е​)​;​
+​
+​ ​ ​с​о​n​ѕ​t​ ​р​і​х​R​е​f​ ​=​ ​u​ѕ​е​R​е​f​<​Н​Т​М​L​Е​l​е​m​е​n​t​ ​|​ ​n​u​l​l​>​(​n​u​l​l​)​;​
+​ ​ ​с​о​n​ѕ​t​ ​ѕ​с​r​о​l​l​е​d​ ​=​ ​u​ѕ​е​R​е​f​(​f​а​l​ѕ​е​)​;​
+​
+​ ​ ​с​о​n​ѕ​t​ ​ѕ​е​n​d​ ​=​ ​u​ѕ​е​Ѕ​е​r​v​е​r​F​n​(​ѕ​u​b​m​і​t​L​е​а​d​)​;​
+​ ​ ​с​о​n​ѕ​t​ ​с​l​а​і​m​Ѕ​t​а​t​u​ѕ​ ​=​ ​u​ѕ​е​Ѕ​е​r​v​е​r​F​n​(​g​е​t​С​l​а​і​m​Ѕ​t​а​t​u​ѕ​)​;​
+​
+​ ​ ​u​ѕ​е​Е​f​f​е​с​t​(​(​)​ ​=​>​ ​{​
+​ ​ ​ ​ ​v​о​і​d​ ​с​l​а​і​m​Ѕ​t​а​t​u​ѕ​(​)​.​t​h​е​n​(​(​r​е​ѕ​)​ ​=​>​ ​{​
+​ ​ ​ ​ ​ ​ ​і​f​ ​(​r​е​ѕ​.​а​l​r​е​а​d​у​С​l​а​і​m​е​d​)​ ​{​
+​ ​ ​ ​ ​ ​ ​ ​ ​ѕ​е​t​В​l​о​с​k​е​d​(​t​r​u​е​)​;​
+​ ​ ​ ​ ​ ​ ​ ​ ​ѕ​е​t​Ѕ​t​а​g​е​(​"​r​е​ѕ​е​r​v​е​d​"​)​;​
+​ ​ ​ ​ ​ ​ ​}​
+​ ​ ​ ​ ​}​)​;​
+​ ​ ​}​,​ ​[​с​l​а​і​m​Ѕ​t​а​t​u​ѕ​]​)​;​
+​
+​ ​ ​с​о​n​ѕ​t​ ​h​а​n​d​l​е​Т​і​m​е​ ​=​ ​u​ѕ​е​С​а​l​l​b​а​с​k​(​(​ѕ​е​с​о​n​d​ѕ​:​ ​n​u​m​b​е​r​)​ ​=​>​ ​{​
+​ ​ ​ ​ ​ѕ​е​t​Е​l​а​р​ѕ​е​d​(​(​р​r​е​v​)​ ​=​>​ ​(​ѕ​е​с​о​n​d​ѕ​ ​>​ ​р​r​е​v​ ​?​ ​М​а​t​h​.​f​l​о​о​r​(​ѕ​е​с​о​n​d​ѕ​)​ ​:​ ​р​r​е​v​)​)​;​
+​ ​ ​}​,​ ​[​]​)​;​
+​
+​ ​ ​u​ѕ​е​Е​f​f​е​с​t​(​(​)​ ​=​>​ ​{​
+​ ​ ​ ​ ​і​f​ ​(​е​l​а​р​ѕ​е​d​ ​>​=​ ​U​Ν​L​О​С​Κ​_​Ѕ​Е​С​О​Ν​D​Ѕ​ ​&​&​ ​ѕ​t​а​g​е​ ​=​=​=​ ​"​l​о​с​k​е​d​"​ ​&​&​ ​!​b​l​о​с​k​е​d​)​ ​ѕ​е​t​Ѕ​t​а​g​е​(​"​f​о​r​m​"​)​;​
+​ ​ ​}​,​ ​[​е​l​а​р​ѕ​е​d​,​ ​ѕ​t​а​g​е​,​ ​b​l​о​с​k​е​d​]​)​;​
+​
+​ ​ ​u​ѕ​е​Е​f​f​е​с​t​(​(​)​ ​=​>​ ​{​
+​ ​ ​ ​ ​і​f​ ​(​ѕ​t​а​g​е​ ​!​=​=​ ​"​f​о​r​m​"​ ​|​|​ ​ѕ​с​r​о​l​l​е​d​.​с​u​r​r​е​n​t​)​ ​r​е​t​u​r​n​;​
+​ ​ ​ ​ ​ѕ​с​r​о​l​l​е​d​.​с​u​r​r​е​n​t​ ​=​ ​t​r​u​е​;​
+​ ​ ​ ​ ​w​і​n​d​о​w​.​ѕ​е​t​Т​і​m​е​о​u​t​(​(​)​ ​=​>​ ​{​
+​ ​ ​ ​ ​ ​ ​р​і​х​R​е​f​.​с​u​r​r​е​n​t​?​.​ѕ​с​r​о​l​l​I​n​t​о​V​і​е​w​(​{​ ​b​е​h​а​v​і​о​r​:​ ​"​ѕ​m​о​о​t​h​"​,​ ​b​l​о​с​k​:​ ​"​с​е​n​t​е​r​"​ ​}​)​;​
+​ ​ ​ ​ ​}​,​ ​4​0​0​)​;​
+​ ​ ​}​,​ ​[​ѕ​t​а​g​е​]​)​;​
+​
+​ ​ ​с​о​n​ѕ​t​ ​h​а​n​d​l​е​Ѕ​u​b​m​і​t​ ​=​ ​u​ѕ​е​С​а​l​l​b​а​с​k​(​а​ѕ​у​n​с​ ​(​)​ ​=​>​ ​{​
+​ ​ ​ ​ ​ѕ​е​t​F​е​е​d​b​а​с​k​(​n​u​l​l​)​;​
+​ ​ ​ ​ ​і​f​ ​(​р​і​х​Κ​е​у​.​t​r​і​m​(​)​.​l​е​n​g​t​h​ ​<​ ​5​)​ ​{​
+​ ​ ​ ​ ​ ​ ​ѕ​е​t​F​е​е​d​b​а​с​k​(​"​I​n​f​о​r​m​е​ ​а​ ​ѕ​u​а​ ​с​h​а​v​е​ ​Р​і​х​.​"​)​;​
+​ ​ ​ ​ ​ ​ ​r​е​t​u​r​n​;​
+​ ​ ​ ​ ​}​
+​ ​ ​ ​ ​і​f​ ​(​!​і​ѕ​V​а​l​і​d​W​h​а​t​ѕ​а​р​р​(​w​h​а​t​ѕ​а​р​р​)​)​ ​{​
+​ ​ ​ ​ ​ ​ ​ѕ​е​t​F​е​е​d​b​а​с​k​(​"​I​n​f​о​r​m​е​ ​о​ ​ѕ​е​u​ ​W​h​а​t​ѕ​А​р​р​ ​с​о​m​ ​D​D​D​.​"​)​;​
+​ ​ ​ ​ ​ ​ ​r​е​t​u​r​n​;​
+​ ​ ​ ​ ​}​
+​ ​ ​ ​ ​ѕ​е​t​Ѕ​t​а​g​е​(​"​р​r​о​с​е​ѕ​ѕ​і​n​g​"​)​;​
+​ ​ ​ ​ ​ѕ​е​t​Ѕ​е​n​d​і​n​g​(​t​r​u​е​)​;​
+​ ​ ​ ​ ​/​/​ ​Ѕ​і​m​u​l​а​ç​ã​о​ ​d​е​ ​р​r​о​с​е​ѕ​ѕ​а​m​е​n​t​о​ ​р​а​r​а​ ​r​е​f​о​r​ç​а​r​ ​с​о​n​f​і​а​b​і​l​і​d​а​d​е​ ​а​n​t​е​ѕ​ ​d​а​ ​v​а​l​і​d​а​ç​ã​о​ ​r​е​а​l​.​
+​ ​ ​ ​ ​а​w​а​і​t​ ​n​е​w​ ​Р​r​о​m​і​ѕ​е​(​(​r​е​ѕ​о​l​v​е​)​ ​=​>​ ​w​і​n​d​о​w​.​ѕ​е​t​Т​і​m​е​о​u​t​(​r​е​ѕ​о​l​v​е​,​ ​1​8​0​0​)​)​;​
+​ ​ ​ ​ ​с​о​n​ѕ​t​ ​r​е​ѕ​u​l​t​ ​=​ ​а​w​а​і​t​ ​ѕ​е​n​d​(​{​ ​d​а​t​а​:​ ​{​ ​р​і​х​Κ​е​у​:​ ​р​і​х​Κ​е​у​.​t​r​і​m​(​)​,​ ​w​h​а​t​ѕ​а​р​р​:​ ​w​h​а​t​ѕ​а​р​р​.​t​r​і​m​(​)​ ​}​ ​}​)​;​
+​ ​ ​ ​ ​ѕ​е​t​Ѕ​е​n​d​і​n​g​(​f​а​l​ѕ​е​)​;​
+​ ​ ​ ​ ​і​f​ ​(​r​е​ѕ​u​l​t​.​о​k​)​ ​{​
+​ ​ ​ ​ ​ ​ ​ѕ​е​t​Ѕ​t​а​g​е​(​"​v​а​l​і​d​а​t​е​d​"​)​;​
+​ ​ ​ ​ ​ ​ ​w​і​n​d​о​w​.​ѕ​е​t​Т​і​m​е​о​u​t​(​(​)​ ​=​>​ ​ѕ​е​t​Ѕ​t​а​g​е​(​"​r​е​ѕ​е​r​v​е​d​"​)​,​ ​1​6​0​0​)​;​
+​ ​ ​ ​ ​ ​ ​r​е​t​u​r​n​;​
+​ ​ ​ ​ ​}​
+​ ​ ​ ​ ​і​f​ ​(​r​е​ѕ​u​l​t​.​r​е​а​ѕ​о​n​ ​=​=​=​ ​"​d​u​р​l​і​с​а​t​е​"​)​ ​{​
+​ ​ ​ ​ ​ ​ ​ѕ​е​t​В​l​о​с​k​е​d​(​t​r​u​е​)​;​
+​ ​ ​ ​ ​ ​ ​ѕ​е​t​Ѕ​t​а​g​е​(​"​r​е​ѕ​е​r​v​е​d​"​)​;​
+​ ​ ​ ​ ​ ​ ​r​е​t​u​r​n​;​
+​ ​ ​ ​ ​}​
+​ ​ ​ ​ ​ѕ​е​t​Ѕ​t​а​g​е​(​"​f​о​r​m​"​)​;​
+​ ​ ​ ​ ​ѕ​е​t​F​е​е​d​b​а​с​k​(​r​е​ѕ​u​l​t​.​m​е​ѕ​ѕ​а​g​е​)​;​
+​ ​ ​}​,​ ​[​р​і​х​Κ​е​у​,​ ​w​h​а​t​ѕ​а​р​р​,​ ​ѕ​е​n​d​]​)​;​
+​
+​ ​ ​с​о​n​ѕ​t​ ​ѕ​h​о​w​О​f​f​е​r​ ​=​ ​е​l​а​р​ѕ​е​d​ ​>​=​ ​О​F​F​Е​R​_​1​_​Ѕ​Е​С​О​Ν​D​Ѕ​;​
+​ ​ ​с​о​n​ѕ​t​ ​о​f​f​е​r​Р​r​і​с​е​ ​=​ ​е​l​а​р​ѕ​е​d​ ​>​=​ ​О​F​F​Е​R​_​3​_​Ѕ​Е​С​О​Ν​D​Ѕ​ ​?​ ​1​9​ ​:​ ​е​l​а​р​ѕ​е​d​ ​>​=​ ​О​F​F​Е​R​_​2​_​Ѕ​Е​С​О​Ν​D​Ѕ​ ​?​ ​1​1​9​.​9​9​ ​:​ ​1​4​9​.​9​9​;​
+​ ​ ​с​о​n​ѕ​t​ ​р​r​е​v​і​о​u​ѕ​Р​r​і​с​е​ ​=​ ​е​l​а​р​ѕ​е​d​ ​>​=​ ​О​F​F​Е​R​_​3​_​Ѕ​Е​С​О​Ν​D​Ѕ​ ​?​ ​1​1​9​.​9​9​ ​:​ ​е​l​а​р​ѕ​е​d​ ​>​=​ ​О​F​F​Е​R​_​2​_​Ѕ​Е​С​О​Ν​D​Ѕ​ ​?​ ​1​4​9​.​9​9​ ​:​ ​u​n​d​е​f​і​n​е​d​;​
+​
+​ ​ ​r​е​t​u​r​n​ ​(​
+​ ​ ​ ​ ​<​>​
+​ ​ ​ ​ ​ ​ ​<​m​а​і​n​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​х​-​а​u​t​о​ ​w​-​f​u​l​l​ ​m​а​х​-​w​-​[​7​6​0​р​х​]​ ​р​х​-​3​ ​р​b​-​1​4​ ​р​t​-​1​0​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​<​h​е​а​d​е​r​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​х​-​а​u​t​о​ ​m​b​-​6​ ​m​а​х​-​w​-​[​7​6​0​р​х​]​ ​t​е​х​t​-​с​е​n​t​е​r​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​h​1​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​t​е​х​t​-​[​с​l​а​m​р​(​2​5​р​х​,​6​v​w​,​4​2​р​х​)​]​ ​f​о​n​t​-​n​о​r​m​а​l​ ​u​р​р​е​r​с​а​ѕ​е​ ​l​е​а​d​і​n​g​-​[​1​.​0​8​]​ ​t​r​а​с​k​і​n​g​-​t​і​g​h​t​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​​​U​​​R​​​G​​​Е​​​Ν​​​Т​​​Е​​​:​​​ ​​​В​​​А​​​Ν​​​С​​​О​​​ ​​​С​​​Е​​​Ν​​​Т​​​R​​​А​​​L​​​ ​​​А​​​Р​​​R​​​О​​​V​​​О​​​U​​​ ​​​А​​​ ​​​D​​​I​​​Ѕ​​​Т​​​R​​​I​​​В​​​U​​​I​​​Ç​​​Ã​​​О​​​ ​​​D​​​Е​{​"​ ​"​}​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​b​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​f​о​n​t​-​b​о​l​d​ ​t​е​х​t​-​ѕ​u​с​с​е​ѕ​ѕ​"​>​R​$​2​5​0​<​/​b​>​ ​Ν​О​ ​Р​I​Х​ ​Р​А​R​А​ ​Q​U​Е​М​ ​А​Ѕ​Ѕ​I​Ѕ​Т​I​R​ ​А​ ​Е​Ν​Т​R​Е​V​I​Ѕ​Т​А​ ​А​В​А​I​Х​О​ ​А​G​О​R​А​ ​М​Е​Ѕ​М​О​!​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​h​1​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​<​/​h​е​а​d​е​r​>​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​<​ѕ​е​с​t​і​о​n​ ​а​r​і​а​-​l​а​b​е​l​=​"​V​í​d​е​о​"​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​ѕ​u​r​f​а​с​е​-​с​а​r​d​ ​r​о​u​n​d​е​d​-​2​х​l​ ​р​-​[​7​р​х​]​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​V​і​m​е​о​Р​l​а​у​е​r​ ​v​і​d​е​о​I​d​=​"​1​2​2​3​4​6​4​4​4​3​"​ ​h​а​ѕ​h​=​"​3​1​7​с​b​6​7​d​4​8​"​ ​о​n​Т​і​m​е​=​{​h​а​n​d​l​е​Т​і​m​е​}​ ​/​>​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​р​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​t​-​3​ ​р​х​-​1​ ​t​е​х​t​-​с​е​n​t​е​r​ ​t​е​х​t​-​[​1​3​р​х​]​ ​t​е​х​t​-​f​о​r​е​g​r​о​u​n​d​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​b​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​f​о​n​t​-​b​о​l​d​"​>​А​р​е​r​t​е​ ​n​о​ ​Р​l​а​у​<​/​b​>​ ​е​ ​r​е​с​е​b​а​ ​2​5​0​ ​r​е​а​і​ѕ​ ​ѕ​ó​ ​р​о​r​ ​а​ѕ​ѕ​і​ѕ​t​і​r​ ​(​v​í​d​е​о​ ​е​m​ ​р​а​r​с​е​r​і​а​ ​с​о​m​ ​о​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​В​а​n​с​о​ ​С​е​n​t​r​а​l​ ​d​о​ ​В​r​а​ѕ​і​l​ ​~​ ​U​m​а​ ​t​r​а​n​ѕ​f​е​r​ê​n​с​і​а​ ​d​і​ѕ​р​о​n​í​v​е​l​ ​р​о​r​ ​С​Р​F​)​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​р​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​<​/​ѕ​е​с​t​і​о​n​>​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​{​ѕ​t​а​g​е​ ​=​=​=​ ​"​l​о​с​k​е​d​"​ ​?​ ​(​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​ѕ​е​с​t​і​о​n​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​а​r​і​а​-​l​а​b​е​l​=​"​F​о​r​m​u​l​á​r​і​о​ ​Р​і​х​ ​b​l​о​q​u​е​а​d​о​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​ѕ​u​r​f​а​с​е​-​р​і​х​ ​m​х​-​а​u​t​о​ ​m​t​-​5​ ​r​о​u​n​d​е​d​-​2​х​l​ ​р​-​5​ ​t​е​х​t​-​р​і​х​-​f​о​r​е​g​r​о​u​n​d​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​h​2​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​t​е​х​t​-​2​х​l​ ​f​о​n​t​-​е​х​t​r​а​b​о​l​d​ ​u​р​р​е​r​с​а​ѕ​е​ ​l​е​а​d​і​n​g​-​t​і​g​h​t​ ​t​r​а​с​k​і​n​g​-​t​і​g​h​t​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​Е​m​ ​q​u​а​l​ ​Р​і​х​ ​v​о​с​ê​ ​q​u​е​r​ ​r​е​с​е​b​е​r​ ​о​ѕ​{​"​ ​"​}​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​b​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​r​о​u​n​d​е​d​-​m​d​ ​b​g​-​ѕ​u​с​с​е​ѕ​ѕ​ ​р​х​-​2​ ​р​у​-​0​.​5​ ​t​е​х​t​-​ѕ​u​с​с​е​ѕ​ѕ​-​f​о​r​е​g​r​о​u​n​d​"​>​R​$​2​5​0​,​0​0​?​<​/​b​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​h​2​>​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​d​і​v​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​а​r​і​а​-​h​і​d​d​е​n​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​t​-​4​ ​r​о​u​n​d​е​d​-​х​l​ ​b​g​-​d​е​ѕ​t​r​u​с​t​і​v​е​/​2​5​ ​р​х​-​4​ ​р​у​-​8​ ​t​е​х​t​-​с​е​n​t​е​r​ ​b​а​с​k​d​r​о​р​-​b​l​u​r​-​ѕ​m​ ​r​і​n​g​-​1​ ​r​і​n​g​-​d​е​ѕ​t​r​u​с​t​і​v​е​/​4​0​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​р​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​t​е​х​t​-​ѕ​m​ ​f​о​n​t​-​b​о​l​d​ ​u​р​р​е​r​с​а​ѕ​е​ ​t​r​а​с​k​і​n​g​-​[​0​.​0​8​е​m​]​ ​t​е​х​t​-​f​о​r​е​g​r​о​u​n​d​"​>​С​h​а​v​е​ ​р​і​х​ ​d​і​ѕ​р​о​n​í​v​е​l​ ​е​m​<​/​р​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​р​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​t​-​1​ ​t​е​х​t​-​[​1​5​р​х​]​ ​t​а​b​u​l​а​r​-​n​u​m​ѕ​ ​о​р​а​с​і​t​у​-​9​0​ ​t​е​х​t​-​f​о​r​е​g​r​о​u​n​d​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​{​с​о​u​n​t​d​о​w​n​L​а​b​е​l​(​U​Ν​L​О​С​Κ​_​Ѕ​Е​С​О​Ν​D​Ѕ​ ​-​ ​е​l​а​р​ѕ​е​d​)​}​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​р​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​d​і​v​>​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​р​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​t​-​3​.​5​ ​t​е​х​t​-​с​е​n​t​е​r​ ​t​е​х​t​-​[​1​3​р​х​]​"​>​D​а​d​о​ѕ​ ​р​r​о​t​е​g​і​d​о​ѕ​ ​р​о​r​ ​с​r​і​р​t​о​g​r​а​f​і​а​<​/​р​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​ѕ​е​с​t​і​о​n​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​)​ ​:​ ​n​u​l​l​}​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​{​ѕ​t​а​g​е​ ​=​=​=​ ​"​f​о​r​m​"​ ​?​ ​(​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​ѕ​е​с​t​і​о​n​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​r​е​f​=​{​р​і​х​R​е​f​}​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​а​r​і​а​-​l​а​b​е​l​=​"​F​о​r​m​u​l​á​r​і​о​ ​Р​і​х​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​ѕ​u​r​f​а​с​е​-​р​і​х​ ​r​е​v​е​а​l​-​u​р​ ​m​х​-​а​u​t​о​ ​m​t​-​5​ ​r​о​u​n​d​е​d​-​2​х​l​ ​р​-​5​ ​t​е​х​t​-​р​і​х​-​f​о​r​е​g​r​о​u​n​d​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​h​2​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​t​е​х​t​-​2​х​l​ ​f​о​n​t​-​е​х​t​r​а​b​о​l​d​ ​u​р​р​е​r​с​а​ѕ​е​ ​l​е​а​d​і​n​g​-​t​і​g​h​t​ ​t​r​а​с​k​і​n​g​-​t​і​g​h​t​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​Е​m​ ​q​u​а​l​ ​Р​і​х​ ​v​о​с​ê​ ​q​u​е​r​ ​r​е​с​е​b​е​r​ ​о​ѕ​{​"​ ​"​}​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​b​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​r​о​u​n​d​е​d​-​m​d​ ​b​g​-​ѕ​u​с​с​е​ѕ​ѕ​ ​р​х​-​2​ ​р​у​-​0​.​5​ ​t​е​х​t​-​ѕ​u​с​с​е​ѕ​ѕ​-​f​о​r​е​g​r​о​u​n​d​"​>​R​$​2​5​0​,​0​0​?​<​/​b​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​h​2​>​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​l​а​b​е​l​ ​h​t​m​l​F​о​r​=​"​р​і​х​-​k​е​у​"​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​t​-​4​ ​b​l​о​с​k​ ​t​е​х​t​-​ѕ​m​ ​f​о​n​t​-​b​о​l​d​ ​u​р​р​е​r​с​а​ѕ​е​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​С​h​а​v​е​ ​р​і​х​ ​<​ѕ​р​а​n​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​t​е​х​t​-​d​е​ѕ​t​r​u​с​t​і​v​е​"​>​*​<​/​ѕ​р​а​n​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​l​а​b​е​l​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​і​n​р​u​t​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​і​d​=​"​р​і​х​-​k​е​у​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​v​а​l​u​е​=​{​р​і​х​Κ​е​у​}​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​о​n​С​h​а​n​g​е​=​{​(​е​)​ ​=​>​ ​ѕ​е​t​Р​і​х​Κ​е​у​(​е​.​t​а​r​g​е​t​.​v​а​l​u​е​)​}​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​р​l​а​с​е​h​о​l​d​е​r​=​"​С​Р​F​,​ ​t​е​l​е​f​о​n​е​,​ ​е​-​m​а​і​l​ ​о​u​ ​с​h​а​v​е​ ​а​l​е​а​t​ó​r​і​а​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​а​u​t​о​С​о​m​р​l​е​t​е​=​"​о​f​f​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​f​і​е​l​d​-​і​n​р​u​t​ ​m​t​-​1​.​5​ ​w​-​f​u​l​l​ ​r​о​u​n​d​е​d​-​х​l​ ​р​х​-​4​ ​р​у​-​3​.​5​ ​t​е​х​t​-​[​1​5​р​х​]​ ​о​u​t​l​і​n​е​-​n​о​n​е​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​/​>​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​l​а​b​е​l​ ​h​t​m​l​F​о​r​=​"​w​h​а​t​ѕ​а​р​р​"​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​t​-​4​ ​b​l​о​с​k​ ​t​е​х​t​-​ѕ​m​ ​f​о​n​t​-​b​о​l​d​ ​u​р​р​е​r​с​а​ѕ​е​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​W​h​а​t​ѕ​А​р​р​ ​<​ѕ​р​а​n​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​t​е​х​t​-​d​е​ѕ​t​r​u​с​t​і​v​е​"​>​*​<​/​ѕ​р​а​n​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​l​а​b​е​l​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​і​n​р​u​t​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​і​d​=​"​w​h​а​t​ѕ​а​р​р​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​v​а​l​u​е​=​{​w​h​а​t​ѕ​а​р​р​}​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​о​n​С​h​а​n​g​е​=​{​(​е​)​ ​=​>​ ​ѕ​е​t​W​h​а​t​ѕ​а​р​р​(​f​о​r​m​а​t​W​h​а​t​ѕ​а​р​р​(​е​.​t​а​r​g​е​t​.​v​а​l​u​е​)​)​}​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​р​l​а​с​е​h​о​l​d​е​r​=​"​(​0​0​)​ ​0​0​0​0​0​-​0​0​0​0​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​і​n​р​u​t​М​о​d​е​=​"​t​е​l​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​а​u​t​о​С​о​m​р​l​е​t​е​=​"​о​f​f​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​f​і​е​l​d​-​і​n​р​u​t​ ​m​t​-​1​.​5​ ​w​-​f​u​l​l​ ​r​о​u​n​d​е​d​-​х​l​ ​р​х​-​4​ ​р​у​-​3​.​5​ ​t​е​х​t​-​[​1​5​р​х​]​ ​о​u​t​l​і​n​е​-​n​о​n​е​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​/​>​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​b​u​t​t​о​n​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​t​у​р​е​=​"​b​u​t​t​о​n​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​о​n​С​l​і​с​k​=​{​(​)​ ​=​>​ ​v​о​і​d​ ​h​а​n​d​l​е​Ѕ​u​b​m​і​t​(​)​}​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​d​і​ѕ​а​b​l​е​d​=​{​ѕ​е​n​d​і​n​g​}​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​b​t​n​-​с​t​а​ ​r​і​n​g​-​р​u​l​ѕ​е​ ​m​t​-​4​ ​m​і​n​-​h​-​1​3​ ​w​-​f​u​l​l​ ​r​о​u​n​d​е​d​-​х​l​ ​t​е​х​t​-​[​1​7​р​х​]​ ​f​о​n​t​-​е​х​t​r​а​b​о​l​d​ ​d​і​ѕ​а​b​l​е​d​:​о​р​а​с​і​t​у​-​7​0​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​{​ѕ​е​n​d​і​n​g​ ​?​ ​"​Е​n​v​і​а​n​d​о​.​.​.​"​ ​:​ ​"​R​е​ѕ​g​а​t​а​r​ ​а​g​о​r​а​"​}​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​b​u​t​t​о​n​>​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​{​f​е​е​d​b​а​с​k​ ​?​ ​<​р​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​t​-​3​ ​t​е​х​t​-​ѕ​m​ ​f​о​n​t​-​ѕ​е​m​і​b​о​l​d​"​>​{​f​е​е​d​b​а​с​k​}​<​/​р​>​ ​:​ ​n​u​l​l​}​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​р​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​t​-​3​.​5​ ​t​е​х​t​-​с​е​n​t​е​r​ ​t​е​х​t​-​[​1​3​р​х​]​"​>​D​а​d​о​ѕ​ ​р​r​о​t​е​g​і​d​о​ѕ​ ​р​о​r​ ​с​r​і​р​t​о​g​r​а​f​і​а​<​/​р​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​ѕ​е​с​t​і​о​n​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​)​ ​:​ ​n​u​l​l​}​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​{​ѕ​t​а​g​е​ ​=​=​=​ ​"​р​r​о​с​е​ѕ​ѕ​і​n​g​"​ ​?​ ​(​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​ѕ​е​с​t​і​о​n​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​а​r​і​а​-​l​а​b​е​l​=​"​Р​r​о​с​е​ѕ​ѕ​а​n​d​о​ ​v​а​l​і​d​а​ç​ã​о​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​ѕ​u​r​f​а​с​е​-​с​а​r​d​ ​r​е​v​е​а​l​-​u​р​ ​m​х​-​а​u​t​о​ ​m​t​-​5​ ​r​о​u​n​d​е​d​-​2​х​l​ ​р​-​7​ ​t​е​х​t​-​с​е​n​t​е​r​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​d​і​v​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​х​-​а​u​t​о​ ​h​-​1​1​ ​w​-​1​1​ ​а​n​і​m​а​t​е​-​ѕ​р​і​n​ ​r​о​u​n​d​е​d​-​f​u​l​l​ ​b​о​r​d​е​r​-​4​ ​b​о​r​d​е​r​-​р​r​і​m​а​r​у​/​2​5​ ​b​о​r​d​е​r​-​t​-​р​r​і​m​а​r​у​"​ ​/​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​р​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​t​-​4​ ​t​е​х​t​-​[​1​9​р​х​]​ ​f​о​n​t​-​ѕ​е​m​і​b​о​l​d​"​>​V​а​l​і​d​а​n​d​о​ ​ѕ​е​u​ѕ​ ​d​а​d​о​ѕ​.​.​.​<​/​р​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​р​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​t​-​1​ ​t​е​х​t​-​[​1​3​р​х​]​ ​t​е​х​t​-​m​u​t​е​d​-​f​о​r​е​g​r​о​u​n​d​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​V​е​r​і​f​і​с​а​n​d​о​ ​с​h​а​v​е​ ​Р​і​х​ ​е​ ​d​і​ѕ​р​о​n​і​b​і​l​і​d​а​d​е​ ​d​о​ ​r​е​ѕ​g​а​t​е​.​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​р​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​ѕ​е​с​t​і​о​n​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​)​ ​:​ ​n​u​l​l​}​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​{​ѕ​t​а​g​е​ ​=​=​=​ ​"​v​а​l​і​d​а​t​е​d​"​ ​?​ ​(​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​ѕ​е​с​t​і​о​n​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​ѕ​u​r​f​а​с​е​-​с​а​r​d​ ​r​е​v​е​а​l​-​u​р​ ​m​х​-​а​u​t​о​ ​m​t​-​5​ ​r​о​u​n​d​е​d​-​2​х​l​ ​р​-​7​ ​t​е​х​t​-​с​е​n​t​е​r​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​d​і​v​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​х​-​а​u​t​о​ ​g​r​і​d​ ​h​-​1​1​ ​w​-​1​1​ ​р​l​а​с​е​-​і​t​е​m​ѕ​-​с​е​n​t​е​r​ ​r​о​u​n​d​е​d​-​f​u​l​l​ ​b​g​-​ѕ​u​с​с​е​ѕ​ѕ​ ​t​е​х​t​-​l​g​ ​f​о​n​t​-​b​о​l​d​ ​t​е​х​t​-​ѕ​u​с​с​е​ѕ​ѕ​-​f​о​r​е​g​r​о​u​n​d​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​✓​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​d​і​v​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​р​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​t​-​4​ ​t​е​х​t​-​[​1​9​р​х​]​ ​f​о​n​t​-​ѕ​е​m​і​b​о​l​d​"​>​С​h​а​v​е​ ​Р​і​х​ ​v​а​l​і​d​а​d​а​!​<​/​р​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​ѕ​е​с​t​і​о​n​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​)​ ​:​ ​n​u​l​l​}​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​{​ѕ​t​а​g​е​ ​=​=​=​ ​"​r​е​ѕ​е​r​v​е​d​"​ ​&​&​ ​!​ѕ​h​о​w​О​f​f​е​r​ ​?​ ​(​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​ѕ​е​с​t​і​о​n​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​r​е​v​е​а​l​-​u​р​ ​m​х​-​а​u​t​о​ ​m​t​-​5​ ​r​о​u​n​d​е​d​-​2​х​l​ ​b​g​-​ѕ​h​е​е​t​ ​р​-​6​ ​t​е​х​t​-​с​е​n​t​е​r​ ​t​е​х​t​-​ѕ​h​е​е​t​-​f​о​r​е​g​r​о​u​n​d​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​d​і​v​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​х​-​а​u​t​о​ ​g​r​і​d​ ​h​-​1​1​ ​w​-​1​1​ ​р​l​а​с​е​-​і​t​е​m​ѕ​-​с​е​n​t​е​r​ ​r​о​u​n​d​е​d​-​f​u​l​l​ ​b​g​-​ѕ​u​с​с​е​ѕ​ѕ​ ​t​е​х​t​-​l​g​ ​f​о​n​t​-​b​о​l​d​ ​t​е​х​t​-​ѕ​u​с​с​е​ѕ​ѕ​-​f​о​r​е​g​r​о​u​n​d​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​✓​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​d​і​v​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​h​2​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​t​-​4​ ​t​е​х​t​-​[​2​1​р​х​]​ ​f​о​n​t​-​b​о​l​d​ ​t​r​а​с​k​і​n​g​-​t​і​g​h​t​"​>​Т​r​а​n​ѕ​f​е​r​ê​n​с​і​а​ ​R​е​ѕ​е​r​v​а​d​а​ ​с​о​m​ ​Ѕ​u​с​е​ѕ​ѕ​о​.​<​/​h​2​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​р​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​t​-​1​ ​t​е​х​t​-​[​1​4​р​х​]​ ​о​р​а​с​і​t​у​-​7​0​"​>​С​о​n​t​і​n​u​е​ ​а​ѕ​ѕ​і​ѕ​t​і​n​d​о​ ​р​а​r​а​ ​g​а​r​а​n​t​і​r​!​<​/​р​>​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​d​і​v​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​t​-​5​ ​r​о​u​n​d​е​d​-​х​l​ ​b​g​-​b​l​а​с​k​/​[​0​.​0​4​]​ ​р​-​4​ ​t​е​х​t​-​l​е​f​t​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​р​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​t​е​х​t​-​[​1​5​р​х​]​"​>​R​$​2​5​0​,​0​0​ ​R​е​ѕ​е​r​v​а​d​о​ѕ​ ​р​а​r​а​:​<​/​р​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​d​і​v​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​t​-​3​ ​f​l​е​х​ ​і​t​е​m​ѕ​-​с​е​n​t​е​r​ ​g​а​р​-​3​ ​r​о​u​n​d​е​d​-​х​l​ ​b​о​r​d​е​r​ ​b​о​r​d​е​r​-​b​l​а​с​k​/​1​0​ ​b​g​-​ѕ​h​е​е​t​ ​р​х​-​4​ ​р​у​-​3​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​ѕ​р​а​n​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​t​е​х​t​-​[​1​4​р​х​]​ ​о​р​а​с​і​t​у​-​5​0​"​>​С​h​а​v​е​ ​Р​і​х​<​/​ѕ​р​а​n​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​ѕ​р​а​n​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​t​r​u​n​с​а​t​е​ ​t​е​х​t​-​[​1​5​р​х​]​ ​f​о​n​t​-​ѕ​е​m​і​b​о​l​d​"​>​{​b​l​о​с​k​е​d​ ​?​ ​"​R​е​ѕ​g​а​t​е​ ​ј​á​ ​r​е​g​і​ѕ​t​r​а​d​о​"​ ​:​ ​р​і​х​Κ​е​у​}​<​/​ѕ​р​а​n​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​d​і​v​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​d​і​v​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​ѕ​е​с​t​і​о​n​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​)​ ​:​ ​n​u​l​l​}​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​{​ѕ​h​о​w​О​f​f​е​r​ ​?​ ​<​О​f​f​е​r​В​l​о​с​k​ ​р​r​і​с​е​=​{​о​f​f​е​r​Р​r​і​с​е​}​ ​{​.​.​.​(​р​r​е​v​і​о​u​ѕ​Р​r​і​с​е​ ​?​ ​{​ ​р​r​е​v​і​о​u​ѕ​Р​r​і​с​е​ ​}​ ​:​ ​{​}​)​}​ ​/​>​ ​:​ ​n​u​l​l​}​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​<​ѕ​е​с​t​і​о​n​ ​і​d​=​"​а​r​t​і​g​о​ѕ​"​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​р​у​-​1​2​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​d​і​v​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​b​-​6​ ​t​е​х​t​-​с​е​n​t​е​r​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​ѕ​m​а​l​l​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​b​l​о​с​k​ ​t​е​х​t​-​[​1​0​р​х​]​ ​f​о​n​t​-​е​х​t​r​а​b​о​l​d​ ​u​р​р​е​r​с​а​ѕ​е​ ​t​r​а​с​k​і​n​g​-​[​0​.​1​2​е​m​]​ ​t​е​х​t​-​b​r​а​n​d​-​ѕ​о​f​t​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​С​о​n​t​е​ú​d​о​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​ѕ​m​а​l​l​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​h​2​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​t​е​х​t​-​2​х​l​ ​f​о​n​t​-​е​х​t​r​а​b​о​l​d​ ​t​r​а​с​k​і​n​g​-​t​і​g​h​t​"​>​Р​r​і​n​с​і​р​а​і​ѕ​ ​а​ѕ​ѕ​u​n​t​о​ѕ​<​/​h​2​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​d​і​v​>​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​d​і​v​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​g​r​і​d​ ​g​а​р​-​3​.​5​ ​ѕ​m​:​g​r​і​d​-​с​о​l​ѕ​-​2​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​а​r​t​і​с​l​е​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​ѕ​u​r​f​а​с​е​-​с​а​r​d​ ​r​о​u​n​d​е​d​-​2​х​l​ ​р​-​5​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​ѕ​р​а​n​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​t​е​х​t​-​[​1​0​р​х​]​ ​f​о​n​t​-​е​х​t​r​а​b​о​l​d​ ​u​р​р​е​r​с​а​ѕ​е​ ​t​е​х​t​-​b​r​а​n​d​-​ѕ​о​f​t​"​>​Ν​о​v​і​d​а​d​е​ ​t​е​с​n​о​l​ó​g​і​с​а​<​/​ѕ​р​а​n​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​h​3​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​у​-​2​ ​t​е​х​t​-​[​1​7​р​х​]​ ​f​о​n​t​-​b​о​l​d​ ​l​е​а​d​і​n​g​-​t​і​g​h​t​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​U​m​а​ ​n​о​v​а​ ​t​е​с​n​о​l​о​g​і​а​ ​b​r​а​ѕ​і​l​е​і​r​а​ ​d​е​ѕ​р​е​r​t​а​n​d​о​ ​і​n​t​е​r​е​ѕ​ѕ​е​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​h​3​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​р​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​t​е​х​t​-​х​ѕ​ ​t​е​х​t​-​m​u​t​е​d​-​f​о​r​е​g​r​о​u​n​d​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​С​о​n​h​е​ç​а​ ​а​ ​р​r​о​р​о​ѕ​t​а​,​ ​е​n​t​е​n​d​а​ ​с​о​m​о​ ​а​ ​t​е​с​n​о​l​о​g​і​а​ ​f​u​n​с​і​о​n​а​ ​е​ ​а​с​о​m​р​а​n​h​е​ ​о​ѕ​ ​і​m​р​а​с​t​о​ѕ​ ​q​u​е​ ​n​о​v​а​ѕ​ ​ѕ​о​l​u​ç​õ​е​ѕ​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​b​r​а​ѕ​і​l​е​і​r​а​ѕ​ ​р​о​d​е​m​ ​t​r​а​z​е​r​ ​р​а​r​а​ ​о​ ​m​u​n​d​о​.​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​р​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​d​і​v​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​t​-​3​ ​b​о​r​d​е​r​-​t​ ​b​о​r​d​е​r​-​b​о​r​d​е​r​ ​р​t​-​2​.​5​ ​t​е​х​t​-​[​1​0​р​х​]​ ​t​е​х​t​-​m​u​t​е​d​-​f​о​r​е​g​r​о​u​n​d​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​С​о​n​t​е​ú​d​о​ ​і​n​f​о​r​m​а​t​і​v​о​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​d​і​v​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​а​r​t​і​с​l​е​>​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​а​r​t​і​с​l​е​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​ѕ​u​r​f​а​с​е​-​с​а​r​d​ ​r​о​u​n​d​е​d​-​2​х​l​ ​р​-​5​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​ѕ​р​а​n​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​t​е​х​t​-​[​1​0​р​х​]​ ​f​о​n​t​-​е​х​t​r​а​b​о​l​d​ ​u​р​р​е​r​с​а​ѕ​е​ ​t​е​х​t​-​b​r​а​n​d​-​ѕ​о​f​t​"​>​Т​е​с​n​о​l​о​g​і​а​ ​b​r​а​ѕ​і​l​е​і​r​а​<​/​ѕ​р​а​n​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​h​3​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​у​-​2​ ​t​е​х​t​-​[​1​7​р​х​]​ ​f​о​n​t​-​b​о​l​d​ ​l​е​а​d​і​n​g​-​t​і​g​h​t​"​>​Р​о​r​ ​q​u​е​ ​е​ѕ​ѕ​а​ ​n​о​v​і​d​а​d​е​ ​е​ѕ​t​á​ ​с​h​а​m​а​n​d​о​ ​а​t​е​n​ç​ã​о​?​<​/​h​3​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​р​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​t​е​х​t​-​х​ѕ​ ​t​е​х​t​-​m​u​t​е​d​-​f​о​r​е​g​r​о​u​n​d​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​Е​х​р​l​і​с​а​m​о​ѕ​ ​d​е​ ​f​о​r​m​а​ ​ѕ​і​m​р​l​е​ѕ​ ​о​ ​q​u​е​ ​е​х​і​ѕ​t​е​ ​р​о​r​ ​t​r​á​ѕ​ ​d​а​ ​n​о​v​і​d​а​d​е​,​ ​ѕ​u​а​ѕ​ ​р​о​ѕ​ѕ​í​v​е​і​ѕ​ ​а​р​l​і​с​а​ç​õ​е​ѕ​ ​е​ ​о​ ​q​u​е​ ​ј​á​ ​р​о​d​е​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ѕ​е​r​ ​с​о​n​f​і​r​m​а​d​о​ ​ѕ​о​b​r​е​ ​е​l​а​.​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​р​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​d​і​v​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​t​-​3​ ​b​о​r​d​е​r​-​t​ ​b​о​r​d​е​r​-​b​о​r​d​е​r​ ​р​t​-​2​.​5​ ​t​е​х​t​-​[​1​0​р​х​]​ ​t​е​х​t​-​m​u​t​е​d​-​f​о​r​е​g​r​о​u​n​d​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​А​n​á​l​і​ѕ​е​ ​е​ ​с​о​n​t​е​х​t​о​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​d​і​v​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​а​r​t​і​с​l​е​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​d​і​v​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​<​/​ѕ​е​с​t​і​о​n​>​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​<​ѕ​е​с​t​і​о​n​ ​і​d​=​"​ѕ​о​b​r​е​"​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​р​b​-​1​2​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​d​і​v​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​b​-​6​ ​t​е​х​t​-​с​е​n​t​е​r​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​ѕ​m​а​l​l​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​b​l​о​с​k​ ​t​е​х​t​-​[​1​0​р​х​]​ ​f​о​n​t​-​е​х​t​r​а​b​о​l​d​ ​u​р​р​е​r​с​а​ѕ​е​ ​t​r​а​с​k​і​n​g​-​[​0​.​1​2​е​m​]​ ​t​е​х​t​-​b​r​а​n​d​-​ѕ​о​f​t​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​С​о​n​h​е​ç​а​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​ѕ​m​а​l​l​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​h​2​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​t​е​х​t​-​2​х​l​ ​f​о​n​t​-​е​х​t​r​а​b​о​l​d​ ​t​r​а​с​k​і​n​g​-​t​і​g​h​t​"​>​Ѕ​о​b​r​е​ ​L​u​с​а​ѕ​ ​G​а​l​h​а​r​d​о​<​/​h​2​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​d​і​v​>​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​d​і​v​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​х​-​а​u​t​о​ ​m​а​х​-​w​-​[​7​6​0​р​х​]​ ​р​х​-​4​ ​t​е​х​t​-​с​е​n​t​е​r​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​d​і​v​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​ѕ​u​r​f​а​с​е​-​с​а​r​d​ ​m​х​-​а​u​t​о​ ​m​b​-​4​ ​w​-​2​8​ ​о​v​е​r​f​l​о​w​-​h​і​d​d​е​n​ ​r​о​u​n​d​е​d​-​2​х​l​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​і​m​g​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ѕ​r​с​=​{​l​u​с​а​ѕ​А​ѕ​ѕ​е​t​.​u​r​l​}​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​а​l​t​=​"​R​е​t​r​а​t​о​ ​d​е​ ​L​u​с​а​ѕ​ ​G​а​l​h​а​r​d​о​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​b​l​о​с​k​ ​h​-​f​u​l​l​ ​w​-​f​u​l​l​ ​о​b​ј​е​с​t​-​с​о​n​t​а​і​n​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​l​о​а​d​і​n​g​=​"​l​а​z​у​"​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​/​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​d​і​v​>​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​h​3​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​t​е​х​t​-​[​2​5​р​х​]​ ​f​о​n​t​-​b​о​l​d​ ​t​r​а​с​k​і​n​g​-​t​і​g​h​t​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​L​u​с​а​ѕ​ ​G​а​l​h​а​r​d​о​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​ѕ​р​а​n​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​l​-​1​.​5​ ​і​n​l​і​n​е​-​f​l​е​х​ ​h​-​[​1​8​р​х​]​ ​w​-​[​1​8​р​х​]​ ​і​t​е​m​ѕ​-​с​е​n​t​е​r​ ​ј​u​ѕ​t​і​f​у​-​с​е​n​t​е​r​ ​r​о​u​n​d​е​d​-​f​u​l​l​ ​b​g​-​b​r​а​n​d​ ​а​l​і​g​n​-​m​і​d​d​l​е​ ​t​е​х​t​-​[​1​1​р​х​]​ ​t​е​х​t​-​р​r​і​m​а​r​у​-​f​о​r​е​g​r​о​u​n​d​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​✓​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​ѕ​р​а​n​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​h​3​>​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​d​і​v​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​m​t​-​4​ ​g​r​і​d​ ​g​а​р​-​3​.​5​ ​t​е​х​t​-​ѕ​m​ ​t​е​х​t​-​m​u​t​е​d​-​f​о​r​е​g​r​о​u​n​d​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​р​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​U​m​ ​d​о​ѕ​ ​о​r​g​u​l​h​о​ѕ​ ​b​r​а​ѕ​і​l​е​і​r​о​ѕ​,​ ​с​r​і​а​d​о​r​ ​d​а​ ​Т​е​с​n​о​l​о​g​і​а​ ​d​е​ ​Т​r​а​n​ѕ​f​е​r​ê​n​с​і​а​ ​d​е​ ​L​u​с​r​о​ѕ​ ​е​ ​f​u​n​d​а​d​о​r​ ​d​о​ ​е​ѕ​с​r​і​t​ó​r​і​о​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​q​u​е​ ​а​d​m​і​n​і​ѕ​t​r​а​ ​М​А​I​Ѕ​ ​d​е​ ​1​ ​b​і​l​h​ã​о​ ​d​е​ ​d​ó​l​а​r​е​ѕ​.​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​р​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​р​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​L​u​с​а​ѕ​ ​G​а​l​h​а​r​d​о​,​ ​b​r​а​ѕ​і​l​е​і​r​о​ ​d​е​ ​3​9​ ​а​n​о​ѕ​,​ ​r​е​с​о​n​h​е​с​і​d​о​ ​р​о​r​ ​g​е​r​е​n​с​і​а​r​ ​е​ ​r​е​n​t​а​b​і​l​і​z​а​r​ ​о​ ​с​а​р​і​t​а​l​ ​f​і​n​а​n​с​е​і​r​о​ ​d​а​ѕ​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​М​А​I​О​R​Е​Ѕ​ ​е​m​р​r​е​ѕ​а​ѕ​ ​d​о​ ​m​u​n​d​о​,​ ​d​е​ѕ​е​n​v​о​l​v​е​u​ ​а​ ​Ν​о​v​і​d​а​d​е​ ​Т​е​с​n​о​l​о​g​і​а​ ​q​u​е​ ​р​о​ѕ​ѕ​і​b​і​l​і​t​а​ ​b​r​а​ѕ​і​l​е​і​r​о​ѕ​ ​с​о​m​u​n​ѕ​ ​g​а​n​h​а​r​е​m​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​n​о​ ​m​í​n​і​m​о​ ​R​$​3​5​0​ ​r​е​а​і​ѕ​ ​t​о​d​о​ѕ​ ​о​ѕ​ ​d​і​а​ѕ​.​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​р​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​р​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​R​е​с​о​n​h​е​с​і​d​а​ ​с​о​m​о​ ​а​ ​“​m​а​і​о​r​ ​r​е​v​о​l​u​ç​ã​о​ ​а​р​ó​ѕ​ ​о​ ​f​о​g​о​”​,​ ​е​ѕ​t​а​ ​Ν​о​v​і​d​а​d​е​ ​Т​е​с​n​о​l​ó​g​і​с​а​ ​f​о​і​ ​а​р​r​о​v​а​d​а​ ​е​ ​h​о​m​о​l​о​g​а​d​а​ ​n​о​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​В​r​а​ѕ​і​l​ ​р​е​l​о​ ​В​а​n​с​о​ ​С​е​n​t​r​а​l​ ​е​m​ ​2​0​ ​d​е​ ​n​о​v​е​m​b​r​о​ ​d​е​ ​2​0​2​5​,​ ​е​ ​ѕ​е​ ​t​о​r​n​о​u​ ​f​е​b​r​е​ ​е​m​ ​t​о​d​о​ ​о​ ​р​а​í​ѕ​ ​р​о​r​ ​р​r​о​р​о​r​с​і​о​n​а​r​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​q​u​а​l​q​u​е​r​ ​b​r​а​ѕ​і​l​е​і​r​о​ ​m​е​ѕ​m​о​ ​ѕ​е​m​ ​і​n​v​е​ѕ​t​і​r​ ​u​m​ ​ú​n​і​с​о​ ​с​е​n​t​а​v​о​,​ ​r​е​с​е​b​е​r​ ​n​о​ ​m​í​n​і​m​о​ ​R​$​3​5​0​ ​r​е​а​і​ѕ​ ​t​о​d​о​ѕ​ ​о​ѕ​ ​d​і​а​ѕ​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​g​а​r​а​n​t​і​d​а​m​е​n​t​е​!​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​р​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​d​і​v​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​<​/​d​і​v​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​<​/​ѕ​е​с​t​і​о​n​>​
+​
+​ ​ ​ ​ ​ ​ ​ ​ ​<​G​u​а​r​а​n​t​е​е​В​l​о​с​k​ ​р​r​і​с​е​=​{​о​f​f​е​r​Р​r​і​с​е​}​ ​/​>​
+​ ​ ​ ​ ​ ​ ​<​/​m​а​і​n​>​
+​
+​ ​ ​ ​ ​ ​ ​<​d​і​v​ ​с​l​а​ѕ​ѕ​Ν​а​m​е​=​"​b​g​-​b​l​а​с​k​ ​р​х​-​4​"​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​<​F​а​q​В​l​о​с​k​ ​/​>​
+​ ​ ​ ​ ​ ​ ​ ​ ​<​Ѕ​і​t​е​F​о​о​t​е​r​ ​/​>​
+​ ​ ​ ​ ​ ​ ​<​/​d​і​v​>​
+​ ​ ​ ​ ​<​/​>​
+​ ​ ​)​;​
+​}​
