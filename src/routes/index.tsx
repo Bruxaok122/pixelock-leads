@@ -118,6 +118,7 @@ function Index() {
   const showOffer = elapsed >= OFFER_1_SECONDS;
   const offerPrice = elapsed >= OFFER_3_SECONDS ? 19 : elapsed >= OFFER_2_SECONDS ? 119.99 : 149.99;
   const previousPrice = elapsed >= OFFER_3_SECONDS ? 119.99 : elapsed >= OFFER_2_SECONDS ? 149.99 : undefined;
+  const showContent = elapsed >= CONTENT_UNLOCK_SECONDS;
 
   return (
     <>
