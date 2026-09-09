@@ -23,7 +23,7 @@ function countdownLabel(remaining: number): string {
   return `${m} min ${String(s).padStart(2, "0")} s`;
 }
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/acesso")({
   ssr: false,
   head: () => ({
     meta: [

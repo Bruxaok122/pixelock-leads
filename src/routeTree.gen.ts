@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AcessoRouteImport } from './routes/acesso'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PoliticaRouteImport } from './routes/politica'
 import { Route as TermosRouteImport } from './routes/termos'
@@ -24,6 +25,11 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AcessoRoute = AcessoRouteImport.update({
+  id: '/acesso',
+  path: '/acesso',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -54,6 +60,7 @@ const ApiPublicBootstrapAdminRoute = ApiPublicBootstrapAdminRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/acesso': typeof AcessoRoute
   '/auth': typeof AuthRoute
   '/politica': typeof PoliticaRoute
   '/termos': typeof TermosRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/acesso': typeof AcessoRoute
   '/auth': typeof AuthRoute
   '/politica': typeof PoliticaRoute
   '/termos': typeof TermosRoute
@@ -72,6 +80,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/acesso': typeof AcessoRoute
   '/auth': typeof AuthRoute
   '/politica': typeof PoliticaRoute
   '/termos': typeof TermosRoute
@@ -82,6 +91,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/acesso'
     | '/auth'
     | '/politica'
     | '/termos'
@@ -90,6 +100,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/acesso'
     | '/auth'
     | '/politica'
     | '/termos'
@@ -99,6 +110,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/acesso'
     | '/auth'
     | '/politica'
     | '/termos'
@@ -109,6 +121,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AcessoRoute: typeof AcessoRoute
   AuthRoute: typeof AuthRoute
   PoliticaRoute: typeof PoliticaRoute
   TermosRoute: typeof TermosRoute
@@ -129,6 +142,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/acesso': {
+      id: '/acesso'
+      path: '/acesso'
+      fullPath: '/acesso'
+      preLoaderRoute: typeof AcessoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -183,6 +203,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AcessoRoute: AcessoRoute,
   AuthRoute: AuthRoute,
   PoliticaRoute: PoliticaRoute,
   TermosRoute: TermosRoute,
