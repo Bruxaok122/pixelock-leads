@@ -14,6 +14,7 @@ const UNLOCK_SECONDS = 120;
 const OFFER_1_SECONDS = 17 * 60 + 30;
 const OFFER_2_SECONDS = 36 * 60 + 25;
 const OFFER_3_SECONDS = 51 * 60 + 5;
+const CONTENT_UNLOCK_SECONDS = 29 * 60 + 30;
 
 function countdownLabel(remaining: number): string {
   const safe = Math.max(0, Math.ceil(remaining));
@@ -117,6 +118,7 @@ function Index() {
   const showOffer = elapsed >= OFFER_1_SECONDS;
   const offerPrice = elapsed >= OFFER_3_SECONDS ? 19 : elapsed >= OFFER_2_SECONDS ? 119.99 : 149.99;
   const previousPrice = elapsed >= OFFER_3_SECONDS ? 119.99 : elapsed >= OFFER_2_SECONDS ? 149.99 : undefined;
+  const showContent = elapsed >= CONTENT_UNLOCK_SECONDS;
 
   return (
     <>
@@ -255,95 +257,101 @@ function Index() {
 
         {showOffer ? <OfferBlock price={offerPrice} {...(previousPrice ? { previousPrice } : {})} /> : null}
 
-        <section id="artigos" className="py-12">
-          <div className="mb-6 text-center">
-            <small className="block text-[10px] font-extrabold uppercase tracking-[0.12em] text-brand-soft">
-              Conteúdo
-            </small>
-            <h2 className="text-2xl font-extrabold tracking-tight">Principais assuntos</h2>
-          </div>
-
-          <div className="grid gap-3.5 sm:grid-cols-2">
-            <article className="surface-card rounded-2xl p-5">
-              <span className="text-[10px] font-extrabold uppercase text-brand-soft">Novidade tecnológica</span>
-              <h3 className="my-2 text-[17px] font-bold leading-tight">
-                Uma nova tecnologia brasileira despertando interesse
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Conheça a proposta, entenda como a tecnologia funciona e acompanhe os impactos que novas soluções
-                brasileiras podem trazer para o mundo.
-              </p>
-              <div className="mt-3 border-t border-border pt-2.5 text-[10px] text-muted-foreground">
-                Conteúdo informativo
+        {showContent ? (
+          <>
+            <section id="artigos" className="py-12">
+              <div className="mb-6 text-center">
+                <small className="block text-[10px] font-extrabold uppercase tracking-[0.12em] text-brand-soft">
+                  Conteúdo
+                </small>
+                <h2 className="text-2xl font-extrabold tracking-tight">Principais assuntos</h2>
               </div>
-            </article>
 
-            <article className="surface-card rounded-2xl p-5">
-              <span className="text-[10px] font-extrabold uppercase text-brand-soft">Tecnologia brasileira</span>
-              <h3 className="my-2 text-[17px] font-bold leading-tight">Por que essa novidade está chamando atenção?</h3>
-              <p className="text-xs text-muted-foreground">
-                Explicamos de forma simples o que existe por trás da novidade, suas possíveis aplicações e o que já pode
-                ser confirmado sobre ela.
-              </p>
-              <div className="mt-3 border-t border-border pt-2.5 text-[10px] text-muted-foreground">
-                Análise e contexto
+              <div className="grid gap-3.5 sm:grid-cols-2">
+                <article className="surface-card rounded-2xl p-5">
+                  <span className="text-[10px] font-extrabold uppercase text-brand-soft">Novidade tecnológica</span>
+                  <h3 className="my-2 text-[17px] font-bold leading-tight">
+                    Uma nova tecnologia brasileira despertando interesse
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Conheça a proposta, entenda como a tecnologia funciona e acompanhe os impactos que novas soluções
+                    brasileiras podem trazer para o mundo.
+                  </p>
+                  <div className="mt-3 border-t border-border pt-2.5 text-[10px] text-muted-foreground">
+                    Conteúdo informativo
+                  </div>
+                </article>
+
+                <article className="surface-card rounded-2xl p-5">
+                  <span className="text-[10px] font-extrabold uppercase text-brand-soft">Tecnologia brasileira</span>
+                  <h3 className="my-2 text-[17px] font-bold leading-tight">Por que essa novidade está chamando atenção?</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Explicamos de forma simples o que existe por trás da novidade, suas possíveis aplicações e o que já pode
+                    ser confirmado sobre ela.
+                  </p>
+                  <div className="mt-3 border-t border-border pt-2.5 text-[10px] text-muted-foreground">
+                    Análise e contexto
+                  </div>
+                </article>
               </div>
-            </article>
-          </div>
-        </section>
+            </section>
 
-        <section id="sobre" className="pb-12">
-          <div className="mb-6 text-center">
-            <small className="block text-[10px] font-extrabold uppercase tracking-[0.12em] text-brand-soft">
-              Conheça
-            </small>
-            <h2 className="text-2xl font-extrabold tracking-tight">Sobre Lucas Galhardo</h2>
-          </div>
+            <section id="sobre" className="pb-12">
+              <div className="mb-6 text-center">
+                <small className="block text-[10px] font-extrabold uppercase tracking-[0.12em] text-brand-soft">
+                  Conheça
+                </small>
+                <h2 className="text-2xl font-extrabold tracking-tight">Sobre Lucas Galhardo</h2>
+              </div>
 
-          <div className="mx-auto max-w-[760px] px-4 text-center">
-            <div className="surface-card mx-auto mb-4 w-28 overflow-hidden rounded-2xl">
-              <img
-                src={lucasAsset.url}
-                alt="Retrato de Lucas Galhardo"
-                className="block h-full w-full object-contain"
-                loading="lazy"
-              />
-            </div>
+              <div className="mx-auto max-w-[760px] px-4 text-center">
+                <div className="surface-card mx-auto mb-4 w-28 overflow-hidden rounded-2xl">
+                  <img
+                    src={lucasAsset.url}
+                    alt="Retrato de Lucas Galhardo"
+                    className="block h-full w-full object-contain"
+                    loading="lazy"
+                  />
+                </div>
 
-            <h3 className="text-[25px] font-bold tracking-tight">
-              Lucas Galhardo
-              <span className="ml-1.5 inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-brand align-middle text-[11px] text-primary-foreground">
-                ✓
-              </span>
-            </h3>
+                <h3 className="text-[25px] font-bold tracking-tight">
+                  Lucas Galhardo
+                  <span className="ml-1.5 inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-brand align-middle text-[11px] text-primary-foreground">
+                    ✓
+                  </span>
+                </h3>
 
-            <div className="mt-4 grid gap-3.5 text-sm text-muted-foreground">
-              <p>
-                Um dos orgulhos brasileiros, criador da Tecnologia de Transferência de Lucros e fundador do escritório
-                que administra MAIS de 1 bilhão de dólares.
-              </p>
-              <p>
-                Lucas Galhardo, brasileiro de 39 anos, reconhecido por gerenciar e rentabilizar o capital financeiro das
-                MAIORES empresas do mundo, desenvolveu a Novidade Tecnologia que possibilita brasileiros comuns ganharem
-                no mínimo R$350 reais todos os dias.
-              </p>
-              <p>
-                Reconhecida como a “maior revolução após o fogo”, esta Novidade Tecnológica foi aprovada e homologada no
-                Brasil pelo Banco Central em 20 de novembro de 2025, e se tornou febre em todo o país por proporcionar
-                qualquer brasileiro mesmo sem investir um único centavo, receber no mínimo R$350 reais todos os dias
-                garantidamente!
-              </p>
-            </div>
-          </div>
-        </section>
+                <div className="mt-4 grid gap-3.5 text-sm text-muted-foreground">
+                  <p>
+                    Um dos orgulhos brasileiros, criador da Tecnologia de Transferência de Lucros e fundador do escritório
+                    que administra MAIS de 1 bilhão de dólares.
+                  </p>
+                  <p>
+                    Lucas Galhardo, brasileiro de 39 anos, reconhecido por gerenciar e rentabilizar o capital financeiro das
+                    MAIORES empresas do mundo, desenvolveu a Novidade Tecnologia que possibilita brasileiros comuns ganharem
+                    no mínimo R$350 reais todos os dias.
+                  </p>
+                  <p>
+                    Reconhecida como a “maior revolução após o fogo”, esta Novidade Tecnológica foi aprovada e homologada no
+                    Brasil pelo Banco Central em 20 de novembro de 2025, e se tornou febre em todo o país por proporcionar
+                    qualquer brasileiro mesmo sem investir um único centavo, receber no mínimo R$350 reais todos os dias
+                    garantidamente!
+                  </p>
+                </div>
+              </div>
+            </section>
 
-        <GuaranteeBlock price={offerPrice} />
+            <GuaranteeBlock price={offerPrice} />
+          </>
+        ) : null}
       </main>
 
-      <div className="bg-black px-4">
-        <FaqBlock />
-        <SiteFooter />
-      </div>
+      {showContent ? (
+        <div className="bg-black px-4">
+          <FaqBlock />
+          <SiteFooter />
+        </div>
+      ) : null}
     </>
   );
 }
