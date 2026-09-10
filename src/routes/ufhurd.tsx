@@ -23,6 +23,15 @@ function countdownLabel(remaining: number): string {
   return `${m} min ${String(s).padStart(2, "0")} s`;
 }
 
+/** Formato MM:SS usado no novo temporizador sobreposto. */
+function clockLabel(remaining: number): string {
+  const safe = Math.max(0, Math.ceil(remaining));
+  const m = Math.floor(safe / 60);
+  const s = safe % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+
 export const Route = createFileRoute("/ufhurd")({
   ssr: false,
   head: () => ({
