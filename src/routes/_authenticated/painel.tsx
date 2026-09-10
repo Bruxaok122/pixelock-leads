@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { listLeads, type LeadRow } from "@/lib/leads.functions";
+import { listLeads, deleteLead, deleteAllLeads, type LeadRow } from "@/lib/leads.functions";
 import { formatDateTime, formatWhatsapp, whatsappLink } from "@/lib/lead-validation";
 import { useLeadChime } from "@/hooks/use-lead-chime";
 
@@ -24,6 +24,10 @@ function PainelPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fetchLeads = useServerFn(listLeads);
+  const removeLead = useServerFn(deleteLead);
+  const removeAllLeads = useServerFn(deleteAllLeads);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [wiping, setWiping] = useState(false);
   const { play, unlock } = useLeadChime();
   const [soundOn, setSoundOn] = useState(false);
   const knownCount = useRef<number | null>(null);

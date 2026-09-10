@@ -100,3 +100,40 @@ export const listLeads = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return (data ?? []) as LeadRow[];
   });
+
+async function assertAdmin(context: { supabase: any; userId: string }) {
+  const { data: isAdmin } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "admin",
+  });
+  if (!isAdmin) throw new Error("Acesso restrito ao administrador.");
+}
+
+export const deleteLead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string }) => {
+    if (!input || typeof input.id !== "string" || input.id.length === 0) {
+      throw new Error("ID inválido.");
+    }
+    return { id: input.id };
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("leads").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+export const deleteAllLeads = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("leads")
+      .delete()
+      .not("id", "is", null);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
