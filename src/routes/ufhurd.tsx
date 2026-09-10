@@ -8,20 +8,14 @@ import lucasAsset from "@/assets/lucas-galhardo.jpg.asset.json";
 import { GuaranteeBlock } from "@/components/guarantee-block";
 import { FaqBlock } from "@/components/faq-block";
 import { SiteFooter } from "@/components/site-footer";
-import { VimeoPlayer } from "@/components/vimeo-player";
+import { VturbPlayer } from "@/components/vturb-player";
+import { ExitIntentModal } from "@/components/exit-intent-modal";
 
 const UNLOCK_SECONDS = 120;
 const OFFER_1_SECONDS = 17 * 60 + 30;
 const OFFER_2_SECONDS = 36 * 60 + 25;
 const OFFER_3_SECONDS = 51 * 60 + 5;
 const CONTENT_UNLOCK_SECONDS = 29 * 60 + 30;
-
-function countdownLabel(remaining: number): string {
-  const safe = Math.max(0, Math.ceil(remaining));
-  const m = Math.floor(safe / 60);
-  const s = safe % 60;
-  return `${m} min ${String(s).padStart(2, "0")} s`;
-}
 
 /** Formato MM:SS usado no novo temporizador sobreposto. */
 function clockLabel(remaining: number): string {
@@ -131,6 +125,7 @@ function Index() {
 
   return (
     <>
+      <ExitIntentModal />
       <main className="mx-auto w-full max-w-[760px] px-3 pb-14 pt-10">
         <header className="mx-auto mb-6 max-w-[760px] text-center">
           <h1 className="text-[clamp(25px,6vw,42px)] font-normal uppercase leading-[1.08] tracking-tight">
@@ -141,7 +136,7 @@ function Index() {
         </header>
 
         <section aria-label="Vídeo" className="surface-card rounded-2xl p-[7px]">
-          <VimeoPlayer videoId="1223464443" hash="317cb67d48" onTime={handleTime} />
+          <VturbPlayer onTime={handleTime} />
 
           <p className="mt-3 px-1 text-center text-[13px] text-foreground">
             <b className="font-bold">Aperte no Play</b> e receba 250 reais só por assistir (vídeo em parceria com o
