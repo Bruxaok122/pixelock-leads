@@ -24,6 +24,10 @@ function PainelPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fetchLeads = useServerFn(listLeads);
+  const removeLead = useServerFn(deleteLead);
+  const removeAllLeads = useServerFn(deleteAllLeads);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [wiping, setWiping] = useState(false);
   const { play, unlock } = useLeadChime();
   const [soundOn, setSoundOn] = useState(false);
   const knownCount = useRef<number | null>(null);
