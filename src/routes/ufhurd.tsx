@@ -143,26 +143,54 @@ function Index() {
         {stage === "locked" ? (
           <section
             aria-label="Formulário Pix bloqueado"
-            className="surface-pix mx-auto mt-5 rounded-2xl p-5 text-pix-foreground"
+            className="surface-pix relative mx-auto mt-5 overflow-hidden rounded-2xl p-5 text-pix-foreground"
           >
-            <h2 className="text-2xl font-extrabold uppercase leading-tight tracking-tight">
-              Em qual Pix você quer receber os{" "}
-              <b className="rounded-md bg-success px-2 py-0.5 text-success-foreground">R$250,00?</b>
-            </h2>
+            {/* Conteúdo real desfocado: o lead vê o formulário, mas ainda bloqueado. */}
+            <div aria-hidden className="pointer-events-none select-none blur-[6px] opacity-70">
+              <h2 className="text-2xl font-extrabold uppercase leading-tight tracking-tight">
+                Em qual Pix você quer receber os{" "}
+                <b className="rounded-md bg-success px-2 py-0.5 text-success-foreground">R$250,00?</b>
+              </h2>
 
-            <div
-              aria-hidden
-              className="mt-4 rounded-xl bg-destructive/25 px-4 py-8 text-center backdrop-blur-sm ring-1 ring-destructive/40"
-            >
-              <p className="text-sm font-bold uppercase tracking-[0.08em] text-foreground">Chave pix disponível em</p>
-              <p className="mt-1 text-[15px] tabular-nums opacity-90 text-foreground">
-                {countdownLabel(UNLOCK_SECONDS - elapsed)}
-              </p>
+              <p className="mt-4 block text-sm font-bold uppercase">Chave pix *</p>
+              <div className="field-input mt-1.5 w-full rounded-xl px-4 py-3.5 text-[15px] opacity-70">
+                CPF, telefone, e-mail ou chave aleatória
+              </div>
+
+              <p className="mt-4 block text-sm font-bold uppercase">WhatsApp *</p>
+              <div className="field-input mt-1.5 w-full rounded-xl px-4 py-3.5 text-[15px] opacity-70">
+                (00) 00000-0000
+              </div>
+
+              <div className="btn-cta mt-4 min-h-13 w-full rounded-xl py-3.5 text-center text-[17px] font-extrabold">
+                Receber transferência
+              </div>
+
+              <p className="mt-3.5 text-center text-[13px]">Dados protegidos por criptografia</p>
             </div>
 
-            <p className="mt-3.5 text-center text-[13px]">Dados protegidos por criptografia</p>
+            {/* Temporizador sobreposto */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+              <p className="text-[15px] font-medium text-pix-foreground">Preenchimento disponível em</p>
+              <p className="mt-1 text-[38px] font-extrabold leading-none tabular-nums text-pix-foreground">
+                {clockLabel(UNLOCK_SECONDS - elapsed)}
+              </p>
+
+              <div className="mt-4 h-[6px] w-full max-w-[420px] overflow-hidden rounded-full bg-white/25">
+                <div
+                  className="h-full rounded-full bg-white transition-[width] duration-500 ease-linear"
+                  style={{ width: `${Math.min(100, (elapsed / UNLOCK_SECONDS) * 100)}%` }}
+                />
+              </div>
+
+              <p className="mt-4 flex max-w-[420px] items-start gap-2 text-left text-[13px] leading-snug text-pix-foreground/90">
+                <span aria-hidden>👆</span>
+                Clique em assistir a entrevista enquanto a sua transferência é liberada
+              </p>
+            </div>
           </section>
         ) : null}
+
 
         {stage === "form" ? (
           <section
