@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { listLeads, type LeadRow } from "@/lib/leads.functions";
+import { listLeads, deleteLead, deleteAllLeads, type LeadRow } from "@/lib/leads.functions";
 import { formatDateTime, formatWhatsapp, whatsappLink } from "@/lib/lead-validation";
 import { useLeadChime } from "@/hooks/use-lead-chime";
 
