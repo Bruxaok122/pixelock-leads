@@ -11,10 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AcessoRouteImport } from './routes/acesso'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PoliticaRouteImport } from './routes/politica'
 import { Route as TermosRouteImport } from './routes/termos'
+import { Route as UfhurdRouteImport } from './routes/ufhurd'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as ApiPublicBootstrapAdminRouteImport } from './routes/api/public/bootstrap-admin'
 
@@ -25,11 +25,6 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AcessoRoute = AcessoRouteImport.update({
-  id: '/acesso',
-  path: '/acesso',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -47,6 +42,11 @@ const TermosRoute = TermosRouteImport.update({
   path: '/termos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UfhurdRoute = UfhurdRouteImport.update({
+  id: '/ufhurd',
+  path: '/ufhurd',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedPainelRoute = AuthenticatedPainelRouteImport.update({
   id: '/painel',
   path: '/painel',
@@ -60,19 +60,19 @@ const ApiPublicBootstrapAdminRoute = ApiPublicBootstrapAdminRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/acesso': typeof AcessoRoute
   '/auth': typeof AuthRoute
   '/politica': typeof PoliticaRoute
   '/termos': typeof TermosRoute
+  '/ufhurd': typeof UfhurdRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/acesso': typeof AcessoRoute
   '/auth': typeof AuthRoute
   '/politica': typeof PoliticaRoute
   '/termos': typeof TermosRoute
+  '/ufhurd': typeof UfhurdRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
 }
@@ -80,10 +80,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/acesso': typeof AcessoRoute
   '/auth': typeof AuthRoute
   '/politica': typeof PoliticaRoute
   '/termos': typeof TermosRoute
+  '/ufhurd': typeof UfhurdRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
 }
@@ -91,29 +91,29 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/acesso'
     | '/auth'
     | '/politica'
     | '/termos'
+    | '/ufhurd'
     | '/painel'
     | '/api/public/bootstrap-admin'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/acesso'
     | '/auth'
     | '/politica'
     | '/termos'
+    | '/ufhurd'
     | '/painel'
     | '/api/public/bootstrap-admin'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
-    | '/acesso'
     | '/auth'
     | '/politica'
     | '/termos'
+    | '/ufhurd'
     | '/_authenticated/painel'
     | '/api/public/bootstrap-admin'
   fileRoutesById: FileRoutesById
@@ -121,10 +121,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  AcessoRoute: typeof AcessoRoute
   AuthRoute: typeof AuthRoute
   PoliticaRoute: typeof PoliticaRoute
   TermosRoute: typeof TermosRoute
+  UfhurdRoute: typeof UfhurdRoute
   ApiPublicBootstrapAdminRoute: typeof ApiPublicBootstrapAdminRoute
 }
 
@@ -142,13 +142,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/acesso': {
-      id: '/acesso'
-      path: '/acesso'
-      fullPath: '/acesso'
-      preLoaderRoute: typeof AcessoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -170,6 +163,13 @@ declare module '@tanstack/react-router' {
       path: '/termos'
       fullPath: '/termos'
       preLoaderRoute: typeof TermosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ufhurd': {
+      id: '/ufhurd'
+      path: '/ufhurd'
+      fullPath: '/ufhurd'
+      preLoaderRoute: typeof UfhurdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/painel': {
@@ -203,10 +203,10 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  AcessoRoute: AcessoRoute,
   AuthRoute: AuthRoute,
   PoliticaRoute: PoliticaRoute,
   TermosRoute: TermosRoute,
+  UfhurdRoute: UfhurdRoute,
   ApiPublicBootstrapAdminRoute: ApiPublicBootstrapAdminRoute,
 }
 export const routeTree = rootRouteImport
