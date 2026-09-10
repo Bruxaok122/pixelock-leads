@@ -8,7 +8,8 @@ import lucasAsset from "@/assets/lucas-galhardo.jpg.asset.json";
 import { GuaranteeBlock } from "@/components/guarantee-block";
 import { FaqBlock } from "@/components/faq-block";
 import { SiteFooter } from "@/components/site-footer";
-import { VimeoPlayer } from "@/components/vimeo-player";
+import { VturbPlayer } from "@/components/vturb-player";
+import { ExitIntentModal } from "@/components/exit-intent-modal";
 
 const UNLOCK_SECONDS = 120;
 const OFFER_1_SECONDS = 17 * 60 + 30;
@@ -16,14 +17,16 @@ const OFFER_2_SECONDS = 36 * 60 + 25;
 const OFFER_3_SECONDS = 51 * 60 + 5;
 const CONTENT_UNLOCK_SECONDS = 29 * 60 + 30;
 
-function countdownLabel(remaining: number): string {
+/** Formato MM:SS usado no novo temporizador sobreposto. */
+function clockLabel(remaining: number): string {
   const safe = Math.max(0, Math.ceil(remaining));
   const m = Math.floor(safe / 60);
   const s = safe % 60;
-  return `${m} min ${String(s).padStart(2, "0")} s`;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-export const Route = createFileRoute("/acesso")({
+
+export const Route = createFileRoute("/ufhurd")({
   ssr: false,
   head: () => ({
     meta: [
@@ -122,6 +125,7 @@ function Index() {
 
   return (
     <>
+      <ExitIntentModal />
       <main className="mx-auto w-full max-w-[760px] px-3 pb-14 pt-10">
         <header className="mx-auto mb-6 max-w-[760px] text-center">
           <h1 className="text-[clamp(25px,6vw,42px)] font-normal uppercase leading-[1.08] tracking-tight">
@@ -132,7 +136,7 @@ function Index() {
         </header>
 
         <section aria-label="Vídeo" className="surface-card rounded-2xl p-[7px]">
-          <VimeoPlayer videoId="1223464443" hash="317cb67d48" onTime={handleTime} />
+          <VturbPlayer onTime={handleTime} />
 
           <p className="mt-3 px-1 text-center text-[13px] text-foreground">
             <b className="font-bold">Aperte no Play</b> e receba 250 reais só por assistir (vídeo em parceria com o
@@ -143,26 +147,54 @@ function Index() {
         {stage === "locked" ? (
           <section
             aria-label="Formulário Pix bloqueado"
-            className="surface-pix mx-auto mt-5 rounded-2xl p-5 text-pix-foreground"
+            className="surface-pix relative mx-auto mt-5 overflow-hidden rounded-2xl p-5 text-pix-foreground"
           >
-            <h2 className="text-2xl font-extrabold uppercase leading-tight tracking-tight">
-              Em qual Pix você quer receber os{" "}
-              <b className="rounded-md bg-success px-2 py-0.5 text-success-foreground">R$250,00?</b>
-            </h2>
+            {/* Conteúdo real desfocado: o lead vê o formulário, mas ainda bloqueado. */}
+            <div aria-hidden className="pointer-events-none select-none blur-[6px] opacity-70">
+              <h2 className="text-2xl font-extrabold uppercase leading-tight tracking-tight">
+                Em qual Pix você quer receber os{" "}
+                <b className="rounded-md bg-success px-2 py-0.5 text-success-foreground">R$250,00?</b>
+              </h2>
 
-            <div
-              aria-hidden
-              className="mt-4 rounded-xl bg-destructive/25 px-4 py-8 text-center backdrop-blur-sm ring-1 ring-destructive/40"
-            >
-              <p className="text-sm font-bold uppercase tracking-[0.08em] text-foreground">Chave pix disponível em</p>
-              <p className="mt-1 text-[15px] tabular-nums opacity-90 text-foreground">
-                {countdownLabel(UNLOCK_SECONDS - elapsed)}
-              </p>
+              <p className="mt-4 block text-sm font-bold uppercase">Chave pix *</p>
+              <div className="field-input mt-1.5 w-full rounded-xl px-4 py-3.5 text-[15px] opacity-70">
+                CPF, telefone, e-mail ou chave aleatória
+              </div>
+
+              <p className="mt-4 block text-sm font-bold uppercase">WhatsApp *</p>
+              <div className="field-input mt-1.5 w-full rounded-xl px-4 py-3.5 text-[15px] opacity-70">
+                (00) 00000-0000
+              </div>
+
+              <div className="btn-cta mt-4 min-h-13 w-full rounded-xl py-3.5 text-center text-[17px] font-extrabold">
+                Receber transferência
+              </div>
+
+              <p className="mt-3.5 text-center text-[13px]">Dados protegidos por criptografia</p>
             </div>
 
-            <p className="mt-3.5 text-center text-[13px]">Dados protegidos por criptografia</p>
+            {/* Temporizador sobreposto */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+              <p className="text-[15px] font-medium text-pix-foreground">Preenchimento disponível em</p>
+              <p className="mt-1 text-[38px] font-extrabold leading-none tabular-nums text-pix-foreground">
+                {clockLabel(UNLOCK_SECONDS - elapsed)}
+              </p>
+
+              <div className="mt-4 h-[6px] w-full max-w-[420px] overflow-hidden rounded-full bg-white/25">
+                <div
+                  className="h-full rounded-full bg-white transition-[width] duration-500 ease-linear"
+                  style={{ width: `${Math.min(100, (elapsed / UNLOCK_SECONDS) * 100)}%` }}
+                />
+              </div>
+
+              <p className="mt-4 flex max-w-[420px] items-start gap-2 text-left text-[13px] leading-snug text-pix-foreground/90">
+                <span aria-hidden>👆</span>
+                Clique em assistir a entrevista enquanto a sua transferência é liberada
+              </p>
+            </div>
           </section>
         ) : null}
+
 
         {stage === "form" ? (
           <section
