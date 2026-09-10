@@ -1,17 +1,8 @@
-import { useEffect, useRef } from "react";
+import { createElement, useEffect, useRef } from "react";
 
 const ACCOUNT_ID = "f17b7cf5-56fb-4776-bb77-71769cdf107c";
 const PLAYER_ID = "6aa1f56413889c63d1af501d";
 const PLAYER_SRC = `https://scripts.converteai.net/${ACCOUNT_ID}/players/${PLAYER_ID}/v4/player.js`;
-
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace JSX {
-    interface IntrinsicElements {
-      "vturb-smartplayer": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
-    }
-  }
-}
 
 function loadPlayerScript(): void {
   if (typeof document === "undefined") return;
@@ -65,13 +56,15 @@ export function VturbPlayer({ onTime }: { onTime: (seconds: number) => void }) {
     return () => clearInterval(interval);
   }, []);
 
+  // O custom element do smartplayer nao existe em JSX.IntrinsicElements,
+  // portanto e criado via createElement com tipagem generica.
   return (
     <div className="overflow-hidden rounded-[15px]">
-      <vturb-smartplayer
-        ref={hostRef as React.Ref<HTMLElement>}
-        id={`vid-${PLAYER_ID}`}
-        style={{ display: "block", margin: "0 auto", width: "100%" }}
-      />
+      {createElement("vturb-smartplayer", {
+        ref: hostRef,
+        id: `vid-${PLAYER_ID}`,
+        style: { display: "block", margin: "0 auto", width: "100%" },
+      })}
     </div>
   );
 }
