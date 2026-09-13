@@ -10,6 +10,8 @@ import { FaqBlock } from "@/components/faq-block";
 import { SiteFooter } from "@/components/site-footer";
 import { VturbPlayer } from "@/components/vturb-player";
 import { ExitIntentModal } from "@/components/exit-intent-modal";
+import { ConsentBanner } from "@/components/consent-banner";
+import { useBehaviorTracking } from "@/hooks/use-behavior-tracking";
 
 const UNLOCK_SECONDS = 120;
 const OFFER_1_SECONDS = 17 * 60 + 30;
@@ -62,6 +64,7 @@ function Index() {
 
   const send = useServerFn(submitLead);
   const claimStatus = useServerFn(getClaimStatus);
+  const behavior = useBehaviorTracking();
 
   useEffect(() => {
     void claimStatus().then((res) => {
@@ -74,11 +77,16 @@ function Index() {
 
   const handleTime = useCallback((seconds: number) => {
     setElapsed((prev) => (seconds > prev ? Math.floor(seconds) : prev));
-  }, []);
+    behavior.trackVideo(seconds);
+  }, [behavior]);
 
   useEffect(() => {
-    if (elapsed >= UNLOCK_SECONDS && stage === "locked" && !blocked) setStage("form");
-  }, [elapsed, stage, blocked]);
+    if (elapsed >= UNLOCK_SECONDS && stage === "locked" && !blocked) {
+      setStage("form");
+      behavior.track({ type: "form_unlocked", targetKey: "pix-form", numericValue: elapsed });
+      window.fbq?.("trackCustom", "FormUnlocked");
+    }
+  }, [elapsed, stage, blocked, behavior]);
 
   useEffect(() => {
     if (stage !== "form" || scrolled.current) return;
@@ -102,9 +110,12 @@ function Index() {
     setSending(true);
     // Simulação de processamento para reforçar confiabilidade antes da validação real.
     await new Promise((resolve) => window.setTimeout(resolve, 1800));
-    const result = await send({ data: { pixKey: pixKey.trim(), whatsapp: whatsapp.trim() } });
+    const result = await send({ data: { pixKey: pixKey.trim(), whatsapp: whatsapp.trim(), ...(behavior.sessionId ? { sessionId: behavior.sessionId } : {}) } });
     setSending(false);
     if (result.ok) {
+      behavior.track({ type: "lead_submitted", targetKey: "submit-lead" });
+      behavior.flush();
+      window.fbq?.("track", "Lead");
       setStage("validated");
       window.setTimeout(() => setStage("reserved"), 1600);
       return;
@@ -116,7 +127,7 @@ function Index() {
     }
     setStage("form");
     setFeedback(result.message);
-  }, [pixKey, whatsapp, send]);
+  }, [pixKey, whatsapp, send, behavior]);
 
   const showOffer = elapsed >= OFFER_1_SECONDS;
   const offerPrice = elapsed >= OFFER_3_SECONDS ? 19 : elapsed >= OFFER_2_SECONDS ? 119.99 : 149.99;
@@ -126,6 +137,7 @@ function Index() {
   return (
     <>
       <ExitIntentModal />
+      <ConsentBanner />
       <main className="mx-auto w-full max-w-[760px] px-3 pb-14 pt-10">
         <header className="mx-auto mb-6 max-w-[760px] text-center">
           <h1 className="text-[clamp(25px,6vw,42px)] font-normal uppercase leading-[1.08] tracking-tight">
@@ -135,7 +147,7 @@ function Index() {
           </h1>
         </header>
 
-        <section aria-label="Vídeo" className="surface-card rounded-2xl p-[7px]">
+        <section aria-label="Vídeo" data-track="video" className="surface-card rounded-2xl p-[7px]">
           <VturbPlayer onTime={handleTime} />
 
           <p className="mt-3 px-1 text-center text-[13px] text-foreground">
@@ -199,6 +211,7 @@ function Index() {
         {stage === "form" ? (
           <section
             ref={pixRef}
+            data-track="pix-form"
             aria-label="Formulário Pix"
             className="surface-pix reveal-up mx-auto mt-5 rounded-2xl p-5 text-pix-foreground"
           >
@@ -235,6 +248,7 @@ function Index() {
             <button
               type="button"
               onClick={() => void handleSubmit()}
+              data-track="submit-lead"
               disabled={sending}
               className="btn-cta ring-pulse mt-4 min-h-13 w-full rounded-xl text-[17px] font-extrabold disabled:opacity-70"
             >

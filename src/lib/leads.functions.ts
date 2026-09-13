@@ -60,13 +60,13 @@ export const submitLead = createServerFn({ method: "POST" })
       };
     }
 
-    const { error } = await supabaseAdmin.from("leads").insert({
+    const { data: created, error } = await supabaseAdmin.from("leads").insert({
       pix_key: data.pixKey,
       whatsapp: data.whatsapp,
       ip_address: ip,
       user_agent: userAgent,
       status: "quente",
-    });
+    }).select("id").single();
 
     if (error) {
       if (error.code === "23505") {
@@ -79,6 +79,9 @@ export const submitLead = createServerFn({ method: "POST" })
       return { ok: false as const, reason: "error" as const, message: "Não foi possível registrar agora. Tente novamente." };
     }
 
+    if (data.sessionId && created?.id) {
+      await supabaseAdmin.from("analytics_sessions").update({ lead_id: created.id }).eq("id", data.sessionId);
+    }
     return { ok: true as const, reason: "created" as const, message: "Transferência reservada com sucesso." };
   });
 
