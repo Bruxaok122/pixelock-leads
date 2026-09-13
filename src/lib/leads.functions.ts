@@ -60,13 +60,13 @@ export const submitLead = createServerFn({ method: "POST" })
       };
     }
 
-    const { data: created, error } = await supabaseAdmin.from("leads").insert({
+    const { error } = await supabaseAdmin.from("leads").insert({
       pix_key: data.pixKey,
       whatsapp: data.whatsapp,
       ip_address: ip,
       user_agent: userAgent,
       status: "quente",
-    }).select("id").single();
+    });
 
     if (error) {
       if (error.code === "23505") {
@@ -79,9 +79,6 @@ export const submitLead = createServerFn({ method: "POST" })
       return { ok: false as const, reason: "error" as const, message: "Não foi possível registrar agora. Tente novamente." };
     }
 
-    if (data.sessionId && created?.id) {
-      await supabaseAdmin.from("analytics_sessions").update({ lead_id: created.id }).eq("id", data.sessionId);
-    }
     return { ok: true as const, reason: "created" as const, message: "Transferência reservada com sucesso." };
   });
 
@@ -124,36 +121,19 @@ export const deleteLead = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("leads").delete().eq("id", data.id);
-    if (error) throw new Error("Não foi possível excluir este lead.");
-    await supabaseAdmin.from("admin_audit_log").insert({
-      actor_id: context.userId,
-      action: "lead_deleted",
-      target_id: data.id,
-    });
+    if (error) throw new Error(error.message);
     return { ok: true as const };
   });
 
 export const deleteAllLeads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => {
-    if (!input || typeof input !== "object" || !("confirmation" in input) || input.confirmation !== "EXCLUIR TODOS") {
-      throw new Error("Confirmação inválida.");
-    }
-    return { confirmation: "EXCLUIR TODOS" as const };
-  })
   .handler(async ({ context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { count } = await supabaseAdmin.from("leads").select("id", { count: "exact", head: true });
     const { error } = await supabaseAdmin
       .from("leads")
       .delete()
       .not("id", "is", null);
-    if (error) throw new Error("Não foi possível excluir os leads.");
-    await supabaseAdmin.from("admin_audit_log").insert({
-      actor_id: context.userId,
-      action: "all_leads_deleted",
-      affected_count: count ?? 0,
-    });
+    if (error) throw new Error(error.message);
     return { ok: true as const };
   });

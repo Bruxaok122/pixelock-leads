@@ -11,7 +11,6 @@ export const leadInputSchema = z.object({
     .trim()
     .min(10, { message: "Informe um WhatsApp válido com DDD" })
     .max(25, { message: "WhatsApp inválido" }),
-  sessionId: z.string().uuid().optional(),
 });
 
 export type LeadInput = z.infer<typeof leadInputSchema>;
