@@ -128,7 +128,7 @@ function Index() {
       <main className="mx-auto w-full max-w-[760px] px-3 pb-14 pt-10">
         <header className="mx-auto mb-6 max-w-[760px] text-center">
           <h1 className="text-[clamp(25px,6vw,42px)] font-normal uppercase leading-[1.08] tracking-tight">
-            ATIVE A TECNOLOGIA QUE TRANSFERE <b className="font-bold text-success">R$250</b> TODOS OS DIAS NA SUA CONTA!
+            ATIVE A TECNOLOGIA QUE TRANSFERE <b className="font-bold text-success">R$350</b> TODOS OS DIAS NA SUA CONTA!
           </h1>
         </header>
 
