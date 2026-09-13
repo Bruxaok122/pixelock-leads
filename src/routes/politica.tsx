@@ -66,7 +66,8 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "7. Cookies",
     body: [
-      "Podemos utilizar cookies e tecnologias similares para melhorar a experiência de navegação e o desempenho do site. Você pode gerenciar cookies nas configurações do seu navegador.",
+      "Com seu consentimento, utilizamos tecnologias similares a cookies para medir visualizações, cliques, rolagem, tempo de permanência, progresso do vídeo e movimentos amostrados do ponteiro. Não registramos teclas pressionadas nem o conteúdo digitado nos campos.",
+      "Também podemos carregar o Pixel Meta para medir campanhas. Esse recurso e a análise detalhada permanecem desligados até você aceitar. A recusa não impede o uso da página.",
     ],
   },
   {

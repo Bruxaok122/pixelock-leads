@@ -6,6 +6,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { listLeads, deleteLead, deleteAllLeads, type LeadRow } from "@/lib/leads.functions";
 import { formatDateTime, formatWhatsapp, whatsappLink } from "@/lib/lead-validation";
 import { useLeadChime } from "@/hooks/use-lead-chime";
+import { Button } from "@/components/ui/button";
+import { DeleteLeadButton, LeadHeaderActions } from "@/components/admin/lead-actions";
+import { PixelSettings } from "@/components/admin/pixel-settings";
+import { AnalyticsPanel } from "@/components/admin/analytics-panel";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   head: () => ({
@@ -67,6 +71,18 @@ function PainelPage() {
     void navigate({ to: "/auth", replace: true });
   }
 
+  async function handleDelete(id: string) {
+    setBusyId(id);
+    try { await removeLead({ data: { id } }); await queryClient.invalidateQueries({ queryKey: ["leads"] }); }
+    finally { setBusyId(null); }
+  }
+
+  async function handleDeleteAll() {
+    setWiping(true);
+    try { await removeAllLeads({ data: { confirmation: "EXCLUIR TODOS" } }); await queryClient.invalidateQueries({ queryKey: ["leads"] }); }
+    finally { setWiping(false); }
+  }
+
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-10">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -76,23 +92,24 @@ function PainelPage() {
             {leads.length} {leads.length === 1 ? "resgate solicitado" : "resgates solicitados"}
           </p>
         </div>
-        <div className="flex gap-2">
-          <button
+        <div className="flex flex-wrap gap-2">
+          <LeadHeaderActions leads={leads} wiping={wiping} onDeleteAll={() => void handleDeleteAll()} />
+          <Button
             onClick={() => {
               unlock();
               setSoundOn(true);
               play();
             }}
-            className="rounded-lg border border-border bg-secondary px-3 py-2 text-xs font-bold"
+            variant="secondary" size="sm"
           >
             {soundOn ? "Som ativado 🔔" : "Ativar som"}
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => void handleSignOut()}
-            className="rounded-lg border border-border bg-secondary px-3 py-2 text-xs font-bold"
+            variant="secondary" size="sm"
           >
             Sair
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -112,7 +129,7 @@ function PainelPage() {
               <span className="rounded-full bg-highlight px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide text-highlight-foreground">
                 🔥 Lead quente
               </span>
-              <time className="text-[11px] text-muted-foreground">{formatDateTime(lead.created_at)}</time>
+              <div className="flex items-center gap-1"><time className="text-[11px] text-muted-foreground">{formatDateTime(lead.created_at)}</time><DeleteLeadButton busy={busyId === lead.id} onDelete={() => void handleDelete(lead.id)} /></div>
             </div>
 
             <dl className="mt-4 grid gap-3 text-sm">
@@ -151,6 +168,8 @@ function PainelPage() {
       {!isLoading && leads.length === 0 ? (
         <p className="mt-10 text-center text-sm text-muted-foreground">Nenhum lead recebido ainda.</p>
       ) : null}
+      <PixelSettings />
+      <AnalyticsPanel />
     </main>
   );
 }
