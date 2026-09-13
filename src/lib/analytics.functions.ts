@@ -45,11 +45,6 @@ export type AnalyticsSession = {
   }>;
 };
 
-async function assertAdmin(context: Parameters<Parameters<typeof requireSupabaseAuth>[0]>[0] extends never ? never : { supabase: { rpc: Function }; userId: string }): Promise<void> {
-  const { data } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
-  if (!data) throw new Error("Acesso restrito ao administrador.");
-}
-
 export const getTrackingSettings = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin

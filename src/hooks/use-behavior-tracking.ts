@@ -52,7 +52,7 @@ export function useBehaviorTracking() {
     };
     const onClick = (event: MouseEvent) => {
       const element = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-track]") : null;
-      const key = element?.dataset.track;
+      const key = element?.dataset["track"];
       if (key === "video" || key === "pix-form" || key === "submit-lead" || key === "whatsapp" || key === "offer") {
         events.current.push({ type: "click", targetKey: key });
       }
