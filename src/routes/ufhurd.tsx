@@ -25,7 +25,6 @@ function clockLabel(remaining: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-
 export const Route = createFileRoute("/ufhurd")({
   ssr: false,
   head: () => ({
@@ -129,9 +128,7 @@ function Index() {
       <main className="mx-auto w-full max-w-[760px] px-3 pb-14 pt-10">
         <header className="mx-auto mb-6 max-w-[760px] text-center">
           <h1 className="text-[clamp(25px,6vw,42px)] font-normal uppercase leading-[1.08] tracking-tight">
-            URGENTE: BANCO CENTRAL APROVOU A DISTRIBUIÇÃO DE{" "}
-            <b className="font-bold text-success">R$250</b> NO PIX PARA QUEM ASSISTIR A
-            ENTREVISTA ABAIXO AGORA MESMO!
+            ATIVE A TECNOLOGIA QUE TRANSFERE <b className="font-bold text-success">R$250</b> TODOS OS DIAS NA SUA CONTA!
           </h1>
         </header>
 
@@ -194,7 +191,6 @@ function Index() {
             </div>
           </section>
         ) : null}
-
 
         {stage === "form" ? (
           <section
@@ -316,10 +312,12 @@ function Index() {
 
                 <article className="surface-card rounded-2xl p-5">
                   <span className="text-[10px] font-extrabold uppercase text-brand-soft">Tecnologia brasileira</span>
-                  <h3 className="my-2 text-[17px] font-bold leading-tight">Por que essa novidade está chamando atenção?</h3>
+                  <h3 className="my-2 text-[17px] font-bold leading-tight">
+                    Por que essa novidade está chamando atenção?
+                  </h3>
                   <p className="text-xs text-muted-foreground">
-                    Explicamos de forma simples o que existe por trás da novidade, suas possíveis aplicações e o que já pode
-                    ser confirmado sobre ela.
+                    Explicamos de forma simples o que existe por trás da novidade, suas possíveis aplicações e o que já
+                    pode ser confirmado sobre ela.
                   </p>
                   <div className="mt-3 border-t border-border pt-2.5 text-[10px] text-muted-foreground">
                     Análise e contexto
@@ -355,19 +353,19 @@ function Index() {
 
                 <div className="mt-4 grid gap-3.5 text-sm text-muted-foreground">
                   <p>
-                    Um dos orgulhos brasileiros, criador da Tecnologia de Transferência de Lucros e fundador do escritório
-                    que administra MAIS de 1 bilhão de dólares.
+                    Um dos orgulhos brasileiros, criador da Tecnologia de Transferência de Lucros e fundador do
+                    escritório que administra MAIS de 1 bilhão de dólares.
                   </p>
                   <p>
-                    Lucas Galhardo, brasileiro de 39 anos, reconhecido por gerenciar e rentabilizar o capital financeiro das
-                    MAIORES empresas do mundo, desenvolveu a Novidade Tecnologia que possibilita brasileiros comuns ganharem
-                    no mínimo R$350 reais todos os dias.
+                    Lucas Galhardo, brasileiro de 39 anos, reconhecido por gerenciar e rentabilizar o capital financeiro
+                    das MAIORES empresas do mundo, desenvolveu a Novidade Tecnologia que possibilita brasileiros comuns
+                    ganharem no mínimo R$350 reais todos os dias.
                   </p>
                   <p>
-                    Reconhecida como a “maior revolução após o fogo”, esta Novidade Tecnológica foi aprovada e homologada no
-                    Brasil pelo Banco Central em 20 de novembro de 2025, e se tornou febre em todo o país por proporcionar
-                    qualquer brasileiro mesmo sem investir um único centavo, receber no mínimo R$350 reais todos os dias
-                    garantidamente!
+                    Reconhecida como a “maior revolução após o fogo”, esta Novidade Tecnológica foi aprovada e
+                    homologada no Brasil pelo Banco Central em 20 de novembro de 2025, e se tornou febre em todo o país
+                    por proporcionar qualquer brasileiro mesmo sem investir um único centavo, receber no mínimo R$350
+                    reais todos os dias garantidamente!
                   </p>
                 </div>
               </div>
