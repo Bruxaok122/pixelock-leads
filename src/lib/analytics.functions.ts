@@ -25,10 +25,6 @@ const sessionSchema = z.object({
   leadId: z.string().uuid().nullable().optional(),
 });
 
-async function requireAdmin(context: Parameters<Parameters<typeof requireSupabaseAuth>[0]>[0] extends never ? never : never) {
-  return context;
-}
-
 export const getTrackingSettings = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
