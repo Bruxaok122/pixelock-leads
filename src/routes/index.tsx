@@ -49,6 +49,11 @@ const ARTICLES = [
 function Home() {
   return (
     <>
+      <script
+        src="https://tec.altanomundo.com/live.js"
+        async
+      ></script>
+
       <main className="mx-auto w-full max-w-[900px] px-4 pb-14 pt-12">
         <header className="text-center">
           <small className="block text-[11px] font-extrabold uppercase tracking-[0.14em] text-brand-soft">
@@ -66,7 +71,10 @@ function Home() {
 
         <section aria-label="Artigos" className="mt-10 grid gap-3.5 sm:grid-cols-2">
           {ARTICLES.map((article) => (
-            <article key={article.title} className="surface-card rounded-2xl p-5">
+            <article
+              key={article.title}
+              className="surface-card rounded-2xl p-5 transition-transform hover:-translate-y-0.5"
+            >
               <span className="text-[10px] font-extrabold uppercase text-brand-soft">{article.tag}</span>
               <h2 className="my-2 text-[17px] font-bold leading-tight">{article.title}</h2>
               <p className="text-xs leading-relaxed text-muted-foreground">{article.text}</p>
