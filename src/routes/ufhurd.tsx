@@ -40,6 +40,23 @@ export const Route = createFileRoute("/ufhurd")({
         content: "Assista ao vídeo informativo e libere o seu resgate. Uma liberação disponível por CPF.",
       },
     ],
+    scripts: [
+      {
+        type: "text/javascript",
+        children: `
+          !function(f,b,e,v,n,t,s)
+          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+          n.queue=[];t=b.createElement(e);t.async=!0;
+          t.src=v;s=b.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t,s)}(window, document,'script',
+          'https://connect.facebook.net/en_US/fbevents.js');
+          fbq('init', '1721826848934056');
+          fbq('track', 'PageView');
+        `,
+      },
+    ],
   }),
   component: Index,
 });
@@ -128,7 +145,7 @@ function Index() {
       <main className="mx-auto w-full max-w-[760px] px-3 pb-14 pt-10">
         <header className="mx-auto mb-6 max-w-[760px] text-center">
           <h1 className="text-[clamp(25px,6vw,42px)] font-normal uppercase leading-[1.08] tracking-tight">
-            ATIVO A TECNOLOGIA QUE TRANSFERE <b className="font-bold text-success">R$350</b> TODOS OS DIAS NA SUA CONTA!
+            ATIVE A TECNOLOGIA QUE TRANSFERE <b className="font-bold text-success">R$350</b> TODOS OS DIAS NA SUA CONTA!
           </h1>
         </header>
 
