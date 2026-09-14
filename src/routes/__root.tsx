@@ -109,8 +109,6 @@ function RootShell({ children }: { children: ReactNode }) {
       <body>
         {children}
         <Scripts />
-        {/* Script do Cloaker inserido antes do fechamento do body */}
-        <script src="https://tec.altanomundo.com/live.js" async></script>
       </body>
     </html>
   );
