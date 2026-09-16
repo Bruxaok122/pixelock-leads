@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { getTrackingSettings, listVisitorSessions, saveTrackingSettings } from "@/lib/tracking.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { listLeads, deleteLead, deleteAllLeads, type LeadRow } from "@/lib/leads.functions";
@@ -188,19 +187,45 @@ function PainelPage() {
 
       {section === "pixel" ? (
         <section className="surface-card mt-6 rounded-2xl p-6">
-          <h2 className="text-xl font-extrabold">Pixel e conversões</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            A configuração é carregada dinamicamente somente em /ufhurd, sem necessidade de uma nova publicação.
-          </p>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-extrabold">Pixel e conversões</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                O pixel da Meta é aplicado somente em /ufhurd e atualizado automaticamente, sem nova publicação.
+              </p>
+            </div>
 
-          <label className="mt-5 block text-sm font-bold" htmlFor="pixel-id">ID do pixel</label>
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-secondary/60 px-3 py-2">
+              <span className="flex size-8 items-center justify-center rounded-full bg-primary text-sm font-black text-primary-foreground">
+                M
+              </span>
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-widest">Meta</p>
+                <p className="text-[11px] text-muted-foreground">Meta Pixel</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-xl border border-border bg-secondary/40 p-4">
+            <p className="text-sm font-bold">Provedor ativo: Meta</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Ao salvar, qualquer configuração anterior incompatível é desativada para evitar conflito de pixels.
+            </p>
+          </div>
+
+          <label className="mt-5 block text-sm font-bold" htmlFor="pixel-id">ID do pixel da Meta</label>
           <input
             id="pixel-id"
             value={pixelId}
             onChange={(event) => setPixelId(event.target.value)}
+            inputMode="numeric"
+            pattern="[0-9]*"
             placeholder="Ex.: 123456789012345"
             className="field-input mt-1.5 w-full rounded-lg px-3 py-2 outline-none"
           />
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Informe somente o ID numérico fornecido pelo Events Manager da Meta.
+          </p>
 
           <label className="mt-4 flex items-center gap-2 text-sm font-semibold">
             <input

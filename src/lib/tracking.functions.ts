@@ -3,6 +3,12 @@ import { getRequestHeader } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const TRACKED_PATH = "/ufhurd";
+const META_PIXEL_ID_PATTERN = /^\d{5,20}$/;
+const META_EVENTS = ["PageView", "ViewContent", "InitiateCheckout", "Lead"] as const;
+
+function isValidMetaPixelId(value: string) {
+  return META_PIXEL_ID_PATTERN.test(value);
+}
 
 function getIpAddress() {
   return (
@@ -25,10 +31,19 @@ export const getTrackingSettings = createServerFn({ method: "GET" }).handler(asy
     .eq("id", true)
     .maybeSingle();
 
+  const pixelId = typeof data?.pixel_id === "string" ? data.pixel_id.trim() : "";
+  const trackedEvents = Array.isArray(data?.tracked_events)
+    ? data.tracked_events.filter(
+        (event): event is (typeof META_EVENTS)[number] =>
+          typeof event === "string" &&
+          META_EVENTS.includes(event as (typeof META_EVENTS)[number]),
+      )
+    : [];
+
   return {
-    pixelId: data?.pixel_id ?? null,
-    pixelEnabled: Boolean(data?.pixel_enabled && data.pixel_id),
-    trackedEvents: Array.isArray(data?.tracked_events) ? data.tracked_events : [],
+    pixelId: isValidMetaPixelId(pixelId) ? pixelId : null,
+    pixelEnabled: Boolean(data?.pixel_enabled && isValidMetaPixelId(pixelId)),
+    trackedEvents,
   };
 });
 
@@ -55,10 +70,24 @@ export const saveTrackingSettings = createServerFn({ method: "POST" })
       throw new Error("Eventos inválidos.");
     }
 
+    const pixelId = typeof value.pixelId === "string" ? value.pixelId.trim() : "";
+
+    if (pixelId && !isValidMetaPixelId(pixelId)) {
+      throw new Error("Informe um ID numérico válido de pixel da Meta.");
+    }
+
+    const trackedEvents = Array.isArray(value.trackedEvents)
+      ? value.trackedEvents.filter(
+          (event): event is (typeof META_EVENTS)[number] =>
+            typeof event === "string" &&
+            META_EVENTS.includes(event as (typeof META_EVENTS)[number]),
+        )
+      : [];
+
     return {
-      pixelId: typeof value.pixelId === "string" ? value.pixelId.trim() : "",
-      pixelEnabled: value.pixelEnabled === true,
-      trackedEvents: Array.isArray(value.trackedEvents) ? value.trackedEvents : [],
+      pixelId,
+      pixelEnabled: value.pixelEnabled === true && Boolean(pixelId),
+      trackedEvents,
     };
   })
   .handler(async ({ data, context }) => {
