@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { getTrackingSettings, listVisitorSessions, saveTrackingSettings } from "@/lib/tracking.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { listLeads, deleteLead, deleteAllLeads, type LeadRow } from "@/lib/leads.functions";
 import { formatDateTime, formatWhatsapp, whatsappLink } from "@/lib/lead-validation";
@@ -31,6 +33,38 @@ function PainelPage() {
   const { play, unlock } = useLeadChime();
   const [soundOn, setSoundOn] = useState(false);
   const knownCount = useRef<number | null>(null);
+  const [section, setSection] = useState<"dashboard" | "leads" | "pixel" | "visitors">("dashboard");
+  const [pixelId, setPixelId] = useState("");
+  const [pixelEnabled, setPixelEnabled] = useState(false);
+  const [trackingEvents, setTrackingEvents] = useState(["PageView", "ViewContent", "InitiateCheckout", "Lead"]);
+  const [pixelMessage, setPixelMessage] = useState<string | null>(null);
+  const fetchTrackingSettings = useServerFn(getTrackingSettings);
+  const updateTrackingSettings = useServerFn(saveTrackingSettings);
+  const fetchVisitors = useServerFn(listVisitorSessions);
+
+  const { data: visitors = [] } = useQuery({
+    queryKey: ["visitor-sessions"],
+    queryFn: () => fetchVisitors(),
+    refetchInterval: 15000,
+  });
+
+  useEffect(() => {
+    void fetchTrackingSettings().then((settings) => {
+      setPixelId(settings.pixelId ?? "");
+      setPixelEnabled(settings.pixelEnabled);
+      setTrackingEvents(settings.trackedEvents);
+    });
+  }, [fetchTrackingSettings]);
+
+  async function handleSavePixel() {
+    setPixelMessage(null);
+    try {
+      await updateTrackingSettings({ data: { pixelId, pixelEnabled, trackedEvents: trackingEvents } });
+      setPixelMessage("Configuração salva. O rastreamento da página /ufhurd será atualizado automaticamente.");
+    } catch (saveError) {
+      setPixelMessage((saveError as Error).message);
+    }
+  }
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["leads"],
@@ -68,7 +102,33 @@ function PainelPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-10">
+    <main className="mx-auto flex w-full max-w-7xl gap-6 px-4 py-6">
+      <aside className="hidden w-56 shrink-0 rounded-2xl border border-border bg-secondary/60 p-3 md:block">
+        <p className="px-3 py-2 text-xs font-extrabold uppercase tracking-widest text-muted-foreground">
+          Indicador Pro
+        </p>
+        <nav className="mt-3 grid gap-1">
+          {[
+            ["dashboard", "Dashboard"],
+            ["leads", "Leads recebidos"],
+            ["pixel", "Pixel e conversões"],
+            ["visitors", "Visitantes online"],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setSection(value as typeof section)}
+              className={`rounded-lg px-3 py-2 text-left text-sm font-semibold transition-colors ${
+                section === value ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+      </aside>
+
+      <div className="min-w-0 flex-1">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">Leads recebidos</h1>
@@ -105,6 +165,117 @@ function PainelPage() {
       {isLoading ? <p className="mt-8 text-sm text-muted-foreground">Carregando...</p> : null}
       {error ? <p className="mt-8 text-sm text-destructive">{(error as Error).message}</p> : null}
 
+      {section === "dashboard" ? (
+        <section className="mt-6 grid gap-4 sm:grid-cols-3">
+          <article className="surface-card rounded-2xl p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Total de leads</p>
+            <p className="mt-2 text-3xl font-extrabold">{leads.length}</p>
+          </article>
+          <article className="surface-card rounded-2xl p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Online agora</p>
+            <p className="mt-2 text-3xl font-extrabold">
+              {visitors.filter((visitor) => Date.now() - new Date(visitor.last_seen_at).getTime() < 30000).length}
+            </p>
+          </article>
+          <article className="surface-card rounded-2xl p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Assistindo</p>
+            <p className="mt-2 text-3xl font-extrabold">
+              {visitors.filter((visitor) => visitor.video_played).length}
+            </p>
+          </article>
+        </section>
+      ) : null}
+
+      {section === "pixel" ? (
+        <section className="surface-card mt-6 rounded-2xl p-6">
+          <h2 className="text-xl font-extrabold">Pixel e conversões</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            A configuração é carregada dinamicamente somente em /ufhurd, sem necessidade de uma nova publicação.
+          </p>
+
+          <label className="mt-5 block text-sm font-bold" htmlFor="pixel-id">ID do pixel</label>
+          <input
+            id="pixel-id"
+            value={pixelId}
+            onChange={(event) => setPixelId(event.target.value)}
+            placeholder="Ex.: 123456789012345"
+            className="field-input mt-1.5 w-full rounded-lg px-3 py-2 outline-none"
+          />
+
+          <label className="mt-4 flex items-center gap-2 text-sm font-semibold">
+            <input
+              type="checkbox"
+              checked={pixelEnabled}
+              onChange={(event) => setPixelEnabled(event.target.checked)}
+            />
+            Ativar rastreamento
+          </label>
+
+          <p className="mt-5 text-sm font-bold">Eventos enviados</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {["PageView", "ViewContent", "InitiateCheckout", "Lead"].map((eventName) => (
+              <label key={eventName} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={trackingEvents.includes(eventName)}
+                  onChange={(event) =>
+                    setTrackingEvents((current) =>
+                      event.target.checked
+                        ? [...current, eventName]
+                        : current.filter((item) => item !== eventName),
+                    )
+                  }
+                />
+                {eventName}
+              </label>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => void handleSavePixel()}
+            className="btn-cta mt-6 rounded-lg px-4 py-2 text-sm font-extrabold"
+          >
+            Salvar configuração
+          </button>
+
+          {pixelMessage ? <p className="mt-3 text-sm text-muted-foreground">{pixelMessage}</p> : null}
+        </section>
+      ) : null}
+
+      {section === "visitors" ? (
+        <section className="surface-card mt-6 rounded-2xl p-6">
+          <h2 className="text-xl font-extrabold">Visitantes em /ufhurd</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Um visitante é considerado online quando enviou atividade nos últimos 30 segundos.
+          </p>
+
+          <div className="mt-5 grid gap-3">
+            {visitors.map((visitor) => {
+              const online = Date.now() - new Date(visitor.last_seen_at).getTime() < 30000;
+              return (
+                <article key={visitor.session_id} className="rounded-xl border border-border bg-secondary/40 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className={`text-sm font-bold ${online ? "text-success" : "text-muted-foreground"}`}>
+                      {online ? "● Online" : "○ Saiu"}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Última atividade: {formatDateTime(visitor.last_seen_at)}
+                    </span>
+                  </div>
+                  <div className="mt-3 grid gap-1 text-sm sm:grid-cols-3">
+                    <span>{visitor.video_played ? "▶ Deu play" : "⏸ Ainda não deu play"}</span>
+                    <span>{visitor.video_seconds}s de vídeo</span>
+                    <span>{visitor.converted ? "Lead convertido" : "Sem conversão"}</span>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
+      {section === "leads" || section === "dashboard" ? (
       <section className="mt-6 grid gap-4 sm:grid-cols-2">
         {leads.map((lead) => (
           <article key={lead.id} className="surface-card rounded-2xl p-5">
@@ -147,10 +318,12 @@ function PainelPage() {
           </article>
         ))}
       </section>
+      ) : null}
 
-      {!isLoading && leads.length === 0 ? (
+      {!isLoading && leads.length === 0 && section === "leads" ? (
         <p className="mt-10 text-center text-sm text-muted-foreground">Nenhum lead recebido ainda.</p>
       ) : null}
+      </div>
     </main>
   );
 }

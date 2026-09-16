@@ -10,6 +10,7 @@ import { FaqBlock } from "@/components/faq-block";
 import { SiteFooter } from "@/components/site-footer";
 import { VturbPlayer } from "@/components/vturb-player";
 import { ExitIntentModal } from "@/components/exit-intent-modal";
+import { TrackingRuntime } from "@/components/tracking-runtime";
 
 const UNLOCK_SECONDS = 120;
 const OFFER_1_SECONDS = 17 * 60 + 30;
@@ -141,6 +142,7 @@ function Index() {
 
   return (
     <>
+      <TrackingRuntime videoSeconds={elapsed} converted={stage === "reserved"} />
       <ExitIntentModal />
       <main className="mx-auto w-full max-w-[760px] px-3 pb-14 pt-10">
         <header className="mx-auto mb-6 max-w-[760px] text-center">
