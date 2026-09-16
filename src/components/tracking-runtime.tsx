@@ -11,12 +11,22 @@ declare global {
 
 function getSessionId() {
   const key = "ufhurd_tracking_session";
-  const existing = window.sessionStorage.getItem(key);
-  if (existing) return existing;
 
-  const value = `${crypto.randomUUID().replaceAll("-", "")}${Date.now()}`;
-  window.sessionStorage.setItem(key, value);
-  return value;
+  try {
+    const existing = window.sessionStorage.getItem(key);
+    if (existing) return existing;
+
+    const randomId =
+      typeof window.crypto?.randomUUID === "function"
+        ? window.crypto.randomUUID().replaceAll("-", "")
+        : `${Math.random().toString(36).slice(2)}${Date.now()}`;
+
+    const value = `${randomId}${Date.now()}`;
+    window.sessionStorage.setItem(key, value);
+    return value;
+  } catch {
+    return `${Math.random().toString(36).slice(2)}${Date.now()}`;
+  }
 }
 
 export function TrackingRuntime({
@@ -34,18 +44,26 @@ export function TrackingRuntime({
   const lastSecondRef = useRef(0);
   const playedRef = useRef(false);
   const pixUnlockedRef = useRef(false);
+  const convertedRef = useRef(converted);
+  const videoSecondsRef = useRef(videoSeconds);
+
+  useEffect(() => {
+    convertedRef.current = converted;
+    videoSecondsRef.current = videoSeconds;
+  }, [converted, videoSeconds]);
 
   useEffect(() => {
     const sessionId = getSessionId();
     sessionIdRef.current = sessionId;
 
+    // Registra a sessão imediatamente ao abrir /ufhurd.
     void sendEvent({
       data: {
         sessionId,
-        eventName: pixUnlocked ? "PixUnlocked" : "PageView",
-        videoSeconds,
+        eventName: "PageView",
+        videoSeconds: 0,
         videoPlayed: false,
-        converted,
+        converted: convertedRef.current,
       },
     });
 
@@ -68,19 +86,13 @@ export function TrackingRuntime({
       `;
       document.head.appendChild(script);
     });
-
-    return () => {
-      // A sessão permanece válida durante a visita; o heartbeat identifica
-      // quando o visitante deixa de enviar atualizações.
-    };
-  }, [converted, getSettings, pixUnlocked, sendEvent, videoSeconds]);
+  }, [getSettings, sendEvent]);
 
   useEffect(() => {
     const sessionId = sessionIdRef.current;
     if (!sessionId) return;
 
-    const isPlaying = videoSeconds > 0;
-    if (isPlaying) playedRef.current = true;
+    if (videoSeconds > 0) playedRef.current = true;
 
     const justUnlocked = pixUnlocked && !pixUnlockedRef.current;
     if (pixUnlocked) pixUnlockedRef.current = true;
@@ -113,15 +125,15 @@ export function TrackingRuntime({
         data: {
           sessionId,
           eventName: playedRef.current ? "Heartbeat" : "PageView",
-          videoSeconds: lastSecondRef.current,
+          videoSeconds: videoSecondsRef.current,
           videoPlayed: playedRef.current,
-          converted,
+          converted: convertedRef.current,
         },
       });
     }, 15000);
 
     return () => window.clearInterval(interval);
-  }, [converted, sendEvent]);
+  }, [sendEvent]);
 
   return null;
 }

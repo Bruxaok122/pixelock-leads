@@ -49,7 +49,10 @@ function PainelPage() {
   const { data: visitors = [] } = useQuery({
     queryKey: ["visitor-sessions"],
     queryFn: () => fetchVisitors(),
-    refetchInterval: 5000,
+    // Mantém o painel atualizado mesmo quando o realtime do Supabase
+    // estiver indisponível no ambiente atual.
+    refetchInterval: 3000,
+    refetchIntervalInBackground: true,
   });
 
   useEffect(() => {
