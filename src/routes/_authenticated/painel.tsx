@@ -85,7 +85,7 @@ function PainelPage() {
         void queryClient.invalidateQueries({ queryKey: ["leads"] });
         play();
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "visitor_sessions" }, () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "analytics_sessions" }, () => {
         void queryClient.invalidateQueries({ queryKey: ["visitor-sessions"] });
       })
       .subscribe();
@@ -425,7 +425,6 @@ function PainelPage() {
             </div>
           </article>
         ))}
-        </div>
         </section>
       </>
       ) : null}

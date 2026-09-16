@@ -54,7 +54,7 @@ export function TrackingRuntime({
       if (document.querySelector(`[data-dynamic-pixel="${settings.pixelId}"]`)) return;
 
       const script = document.createElement("script");
-      script.dataset.dynamicPixel = settings.pixelId;
+      script.dataset["dynamicPixel"] = settings.pixelId;
       script.innerHTML = `
         !function(f,b,e,v,n,t,s){
           if(f.fbq)return;n=f.fbq=function(){n.callMethod?
