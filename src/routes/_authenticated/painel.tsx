@@ -108,6 +108,20 @@ function PainelPage() {
     void navigate({ to: "/auth", replace: true });
   }
 
+  async function handleDeleteAllLeads() {
+    if (leads.length === 0 || !window.confirm("Excluir todos os leads? Essa ação não pode ser desfeita.")) {
+      return;
+    }
+
+    setWiping(true);
+    try {
+      await removeAllLeads();
+      await queryClient.invalidateQueries({ queryKey: ["leads"] });
+    } finally {
+      setWiping(false);
+    }
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-7xl gap-6 px-4 py-6">
       <aside className="hidden w-56 shrink-0 rounded-2xl border border-border bg-secondary/60 p-3 md:block">
@@ -176,8 +190,9 @@ function PainelPage() {
       {section === "dashboard" ? (
         <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <article className="surface-card rounded-2xl p-5">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Total de leads</p>
-            <p className="mt-2 text-3xl font-extrabold">{leads.length}</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Visitantes registrados</p>
+            <p className="mt-2 text-3xl font-extrabold">{visitors.length}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Sessões na página /ufhurd</p>
           </article>
           <article className="surface-card rounded-2xl p-5">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Online agora</p>
@@ -335,7 +350,25 @@ function PainelPage() {
       ) : null}
 
       {section === "leads" ? (
-      <section className="mt-6 grid gap-4 sm:grid-cols-2">
+      <>
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-extrabold">Leads recebidos</h2>
+            <p className="text-sm text-muted-foreground">
+              Consulte e gerencie os resgates registrados.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={wiping || leads.length === 0}
+            onClick={() => void handleDeleteAllLeads()}
+          >
+            {wiping ? "Excluindo..." : "Excluir todos os leads"}
+          </Button>
+        </div>
+
+        <section className="mt-4 grid gap-4 sm:grid-cols-2">
         {leads.map((lead) => (
           <article key={lead.id} className="surface-card rounded-2xl p-5">
             <div className="flex items-center justify-between gap-2">
@@ -393,7 +426,8 @@ function PainelPage() {
           </article>
         ))}
         </div>
-      </section>
+        </section>
+      </>
       ) : null}
 
       {!isLoading && leads.length === 0 && section === "leads" ? (
