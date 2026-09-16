@@ -426,7 +426,6 @@ function PainelPage() {
           </article>
         ))}
         </section>
-        </section>
       </>
       ) : null}
 
