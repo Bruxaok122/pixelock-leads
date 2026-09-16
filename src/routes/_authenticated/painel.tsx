@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { getTrackingSettings, listVisitorSessions, saveTrackingSettings } from "@/lib/tracking.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { listLeads, deleteLead, deleteAllLeads, type LeadRow } from "@/lib/leads.functions";
@@ -32,6 +33,10 @@ function PainelPage() {
   const { play, unlock } = useLeadChime();
   const [soundOn, setSoundOn] = useState(false);
   const knownCount = useRef<number | null>(null);
+
+  useEffect(() => {
+    setSoundOn(window.localStorage.getItem("painel-sound-enabled") === "true");
+  }, []);
   const [section, setSection] = useState<"dashboard" | "leads" | "pixel" | "visitors">("dashboard");
   const [pixelId, setPixelId] = useState("");
   const [pixelEnabled, setPixelEnabled] = useState(false);
@@ -44,7 +49,7 @@ function PainelPage() {
   const { data: visitors = [] } = useQuery({
     queryKey: ["visitor-sessions"],
     queryFn: () => fetchVisitors(),
-    refetchInterval: 15000,
+    refetchInterval: 5000,
   });
 
   useEffect(() => {
@@ -75,10 +80,13 @@ function PainelPage() {
 
   useEffect(() => {
     const channel = supabase
-      .channel("leads-realtime")
+      .channel("panel-realtime")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "leads" }, () => {
         void queryClient.invalidateQueries({ queryKey: ["leads"] });
         play();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "visitor_sessions" }, () => {
+        void queryClient.invalidateQueries({ queryKey: ["visitor-sessions"] });
       })
       .subscribe();
 
@@ -139,6 +147,7 @@ function PainelPage() {
           <button
             onClick={() => {
               unlock();
+              window.localStorage.setItem("painel-sound-enabled", "true");
               setSoundOn(true);
               play();
             }}
@@ -165,7 +174,7 @@ function PainelPage() {
       {error ? <p className="mt-8 text-sm text-destructive">{(error as Error).message}</p> : null}
 
       {section === "dashboard" ? (
-        <section className="mt-6 grid gap-4 sm:grid-cols-3">
+        <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <article className="surface-card rounded-2xl p-5">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Total de leads</p>
             <p className="mt-2 text-3xl font-extrabold">{leads.length}</p>
@@ -181,6 +190,31 @@ function PainelPage() {
             <p className="mt-2 text-3xl font-extrabold">
               {visitors.filter((visitor) => visitor.video_played).length}
             </p>
+          </article>
+          <article className="surface-card rounded-2xl p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Pix liberado</p>
+            <p className="mt-2 text-3xl font-extrabold">
+              {visitors.filter((visitor) => visitor.video_seconds >= 120).length}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">Alcançaram 2 minutos de vídeo</p>
+          </article>
+          <article className="surface-card rounded-2xl p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Conversão</p>
+            <p className="mt-2 text-3xl font-extrabold">
+              {visitors.length
+                ? `${Math.round((visitors.filter((visitor) => visitor.converted).length / visitors.length) * 100)}%`
+                : "0%"}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">Visitantes que enviaram lead</p>
+          </article>
+          <article className="surface-card rounded-2xl p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Tempo médio</p>
+            <p className="mt-2 text-3xl font-extrabold">
+              {visitors.length
+                ? `${Math.round(visitors.reduce((total, visitor) => total + visitor.video_seconds, 0) / visitors.length)}s`
+                : "0s"}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">Vídeo assistido por visitante</p>
           </article>
         </section>
       ) : null}
@@ -290,7 +324,7 @@ function PainelPage() {
                   </div>
                   <div className="mt-3 grid gap-1 text-sm sm:grid-cols-3">
                     <span>{visitor.video_played ? "▶ Deu play" : "⏸ Ainda não deu play"}</span>
-                    <span>{visitor.video_seconds}s de vídeo</span>
+                    <span>{visitor.video_seconds >= 120 ? "🔓 Pix liberado" : `${visitor.video_seconds}s de vídeo`}</span>
                     <span>{visitor.converted ? "Lead convertido" : "Sem conversão"}</span>
                   </div>
                 </article>
@@ -300,7 +334,7 @@ function PainelPage() {
         </section>
       ) : null}
 
-      {section === "leads" || section === "dashboard" ? (
+      {section === "leads" ? (
       <section className="mt-6 grid gap-4 sm:grid-cols-2">
         {leads.map((lead) => (
           <article key={lead.id} className="surface-card rounded-2xl p-5">
@@ -332,6 +366,7 @@ function PainelPage() {
               </div>
             </dl>
 
+            <div className="mt-4 flex gap-2">
             <a
               href={whatsappLink(lead.whatsapp)}
               target="_blank"
@@ -340,8 +375,24 @@ function PainelPage() {
             >
               Chamar no WhatsApp
             </a>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busyId === lead.id}
+              onClick={async () => {
+                if (!window.confirm("Excluir este lead?")) return;
+                setBusyId(lead.id);
+                await removeLead({ data: { id: lead.id } });
+                await queryClient.invalidateQueries({ queryKey: ["leads"] });
+                setBusyId(null);
+              }}
+            >
+              {busyId === lead.id ? "..." : "Excluir"}
+            </Button>
+            </div>
           </article>
         ))}
+        </div>
       </section>
       ) : null}
 

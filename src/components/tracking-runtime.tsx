@@ -22,18 +22,32 @@ function getSessionId() {
 export function TrackingRuntime({
   videoSeconds,
   converted,
+  pixUnlocked,
 }: {
   videoSeconds: number;
   converted: boolean;
+  pixUnlocked: boolean;
 }) {
   const getSettings = useServerFn(getTrackingSettings);
   const sendEvent = useServerFn(trackVisitorEvent);
   const sessionIdRef = useRef<string | null>(null);
   const lastSecondRef = useRef(0);
   const playedRef = useRef(false);
+  const pixUnlockedRef = useRef(false);
 
   useEffect(() => {
-    sessionIdRef.current = getSessionId();
+    const sessionId = getSessionId();
+    sessionIdRef.current = sessionId;
+
+    void sendEvent({
+      data: {
+        sessionId,
+        eventName: pixUnlocked ? "PixUnlocked" : "PageView",
+        videoSeconds,
+        videoPlayed: false,
+        converted,
+      },
+    });
 
     void getSettings().then((settings) => {
       if (!settings.pixelEnabled || !settings.pixelId) return;
@@ -59,7 +73,7 @@ export function TrackingRuntime({
       // A sessão permanece válida durante a visita; o heartbeat identifica
       // quando o visitante deixa de enviar atualizações.
     };
-  }, [getSettings]);
+  }, [converted, getSettings, pixUnlocked, sendEvent, videoSeconds]);
 
   useEffect(() => {
     const sessionId = sessionIdRef.current;
@@ -68,9 +82,12 @@ export function TrackingRuntime({
     const isPlaying = videoSeconds > 0;
     if (isPlaying) playedRef.current = true;
 
+    const justUnlocked = pixUnlocked && !pixUnlockedRef.current;
+    if (pixUnlocked) pixUnlockedRef.current = true;
+
     const shouldSend =
-      videoSeconds === 0 ||
-      videoSeconds - lastSecondRef.current >= 10 ||
+      (videoSeconds > 0 && videoSeconds - lastSecondRef.current >= 10) ||
+      justUnlocked ||
       converted;
 
     if (!shouldSend) return;
@@ -79,13 +96,13 @@ export function TrackingRuntime({
     void sendEvent({
       data: {
         sessionId,
-        eventName: converted ? "Lead" : playedRef.current ? "VideoProgress" : "PageView",
+        eventName: converted ? "Lead" : justUnlocked ? "PixUnlocked" : "VideoProgress",
         videoSeconds,
         videoPlayed: playedRef.current,
         converted,
       },
     });
-  }, [converted, sendEvent, videoSeconds]);
+  }, [converted, pixUnlocked, sendEvent, videoSeconds]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {

@@ -142,7 +142,11 @@ function Index() {
 
   return (
     <>
-      <TrackingRuntime videoSeconds={elapsed} converted={stage === "reserved"} />
+      <TrackingRuntime
+        videoSeconds={elapsed}
+        converted={stage === "reserved"}
+        pixUnlocked={elapsed >= UNLOCK_SECONDS}
+      />
       <ExitIntentModal />
       <main className="mx-auto w-full max-w-[760px] px-3 pb-14 pt-10">
         <header className="mx-auto mb-6 max-w-[760px] text-center">
