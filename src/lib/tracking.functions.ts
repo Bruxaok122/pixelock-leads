@@ -6,6 +6,16 @@ const TRACKED_PATH = "/ufhurd";
 const META_PIXEL_ID_PATTERN = /^\d{5,20}$/;
 const META_EVENTS = ["PageView", "ViewContent", "InitiateCheckout", "Lead"] as const;
 
+export interface VisitorSession {
+  session_id: string;
+  path: string;
+  page_viewed_at: string;
+  last_seen_at: string;
+  video_played: boolean;
+  video_seconds: number;
+  converted: boolean;
+}
+
 function isValidMetaPixelId(value: string) {
   return META_PIXEL_ID_PATTERN.test(value);
 }
@@ -27,23 +37,16 @@ export const getTrackingSettings = createServerFn({ method: "GET" }).handler(asy
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("tracking_settings")
-    .select("pixel_id, pixel_enabled, tracked_events")
-    .eq("id", true)
+    .select("meta_pixel_id, enabled")
+    .eq("setting_key", "meta_pixel")
     .maybeSingle();
 
-  const pixelId = typeof data?.pixel_id === "string" ? data.pixel_id.trim() : "";
-  const trackedEvents = Array.isArray(data?.tracked_events)
-    ? data.tracked_events.filter(
-        (event): event is (typeof META_EVENTS)[number] =>
-          typeof event === "string" &&
-          META_EVENTS.includes(event as (typeof META_EVENTS)[number]),
-      )
-    : [];
+  const pixelId = typeof data?.meta_pixel_id === "string" ? data.meta_pixel_id.trim() : "";
 
   return {
     pixelId: isValidMetaPixelId(pixelId) ? pixelId : null,
-    pixelEnabled: Boolean(data?.pixel_enabled && isValidMetaPixelId(pixelId)),
-    trackedEvents,
+    pixelEnabled: Boolean(data?.enabled && isValidMetaPixelId(pixelId)),
+    trackedEvents: [...META_EVENTS],
   };
 });
 
@@ -99,13 +102,16 @@ export const saveTrackingSettings = createServerFn({ method: "POST" })
     if (!isAdmin) throw new Error("Acesso restrito ao administrador.");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("tracking_settings").upsert({
-      id: true,
-      pixel_id: data.pixelId || null,
-      pixel_enabled: data.pixelEnabled && Boolean(data.pixelId),
-      tracked_events: data.trackedEvents,
-      updated_at: new Date().toISOString(),
-    });
+    const { error } = await supabaseAdmin.from("tracking_settings").upsert(
+      {
+        setting_key: "meta_pixel",
+        meta_pixel_id: data.pixelId || null,
+        enabled: data.pixelEnabled && Boolean(data.pixelId),
+        updated_at: new Date().toISOString(),
+        updated_by: context.userId,
+      },
+      { onConflict: "setting_key" },
+    );
 
     if (error) throw new Error(error.message);
     return { ok: true as const };
@@ -141,31 +147,25 @@ export const trackVisitorEvent = createServerFn({ method: "POST" })
     const userAgent = getRequestHeader("user-agent") ?? null;
     const ipAddress = getIpAddress();
 
-    const { error: sessionError } = await supabaseAdmin.from("visitor_sessions").upsert(
+    const now = new Date().toISOString();
+    const { error: sessionError } = await supabaseAdmin.from("analytics_sessions").upsert(
       {
-        session_id: data.sessionId,
-        path: TRACKED_PATH,
-        ip_address: ipAddress,
-        user_agent: userAgent,
-        last_seen_at: new Date().toISOString(),
-        video_played: data.videoPlayed,
-        video_seconds: data.videoSeconds,
-        converted: data.converted,
+        id: data.sessionId,
+        page_path: TRACKED_PATH,
+        device_type: userAgent?.includes("Mobile") ? "mobile" : "desktop",
+        last_seen_at: now,
+        max_video_seconds: data.videoSeconds,
       },
-      { onConflict: "session_id" },
+      { onConflict: "id" },
     );
 
     if (sessionError) throw new Error(sessionError.message);
 
-    const { error: eventError } = await supabaseAdmin.from("tracking_events").insert({
+    const { error: eventError } = await supabaseAdmin.from("analytics_events").insert({
       session_id: data.sessionId,
-      path: TRACKED_PATH,
-      event_name: data.eventName,
-      event_data: {
-        videoSeconds: data.videoSeconds,
-        videoPlayed: data.videoPlayed,
-        converted: data.converted,
-      },
+      event_type: data.converted ? "lead" : data.eventName,
+      numeric_value: data.videoSeconds,
+      target_key: ipAddress === "0.0.0.0" ? null : "tracked",
     });
 
     if (eventError) throw new Error(eventError.message);
@@ -184,12 +184,20 @@ export const listVisitorSessions = createServerFn({ method: "GET" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
-      .from("visitor_sessions")
-      .select("session_id, path, user_agent, page_viewed_at, last_seen_at, video_played, video_seconds, converted")
-      .eq("path", TRACKED_PATH)
+      .from("analytics_sessions")
+      .select("id, page_path, started_at, last_seen_at, max_video_seconds, lead_id")
+      .eq("page_path", TRACKED_PATH)
       .order("last_seen_at", { ascending: false })
       .limit(500);
 
     if (error) throw new Error(error.message);
-    return data ?? [];
+    return (data ?? []).map((session): VisitorSession => ({
+      session_id: session.id,
+      path: session.page_path,
+      page_viewed_at: session.started_at,
+      last_seen_at: session.last_seen_at,
+      video_played: session.max_video_seconds > 0,
+      video_seconds: session.max_video_seconds,
+      converted: session.lead_id !== null,
+    }));
   });
