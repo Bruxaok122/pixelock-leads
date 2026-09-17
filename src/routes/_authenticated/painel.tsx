@@ -347,7 +347,7 @@ function PainelPage() {
                 <article key={visitor.session_id} className="rounded-xl border border-border bg-secondary/40 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className={`text-sm font-bold ${online ? "text-success" : "text-muted-foreground"}`}>
-                      {online ? "● Online" : "○ Saiu"}
+                      {online ? "● Online" : "○ Offline"}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       Última atividade: {formatDateTime(visitor.last_seen_at)}

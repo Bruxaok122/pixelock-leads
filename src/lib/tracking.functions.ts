@@ -158,6 +158,9 @@ export const trackVisitorEvent = createServerFn({ method: "POST" })
     const ipAddress = getIpAddress();
 
     const now = new Date().toISOString();
+    // Eventos de saída tornam a sessão imediatamente offline no painel.
+    const lastSeenAt = data.eventName === "PageExit" ? new Date(Date.now() - 60000).toISOString() : now;
+
     const { data: existingSession, error: existingSessionError } = await supabaseAdmin
       .from("analytics_sessions")
       .select("max_video_seconds")
@@ -171,7 +174,7 @@ export const trackVisitorEvent = createServerFn({ method: "POST" })
         id: data.sessionId,
         page_path: TRACKED_PATH,
         device_type: userAgent?.includes("Mobile") ? "mobile" : "desktop",
-        last_seen_at: now,
+        last_seen_at: lastSeenAt,
         max_video_seconds: Math.max(existingSession?.max_video_seconds ?? 0, data.videoSeconds),
       },
       { onConflict: "id" },

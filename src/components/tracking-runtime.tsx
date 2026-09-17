@@ -95,6 +95,27 @@ export function TrackingRuntime({
       `;
       document.head.appendChild(script);
     });
+
+    const handlePageExit = () => {
+      const currentSessionId = sessionIdRef.current;
+      if (!currentSessionId) return;
+
+      void sendEvent({
+        data: {
+          sessionId: currentSessionId,
+          eventName: "PageExit",
+          videoSeconds: videoSecondsRef.current,
+          videoPlayed: playedRef.current,
+          converted: convertedRef.current,
+        },
+      });
+    };
+
+    window.addEventListener("pagehide", handlePageExit);
+
+    return () => {
+      window.removeEventListener("pagehide", handlePageExit);
+    };
   }, [getSettings, sendEvent]);
 
   useEffect(() => {
