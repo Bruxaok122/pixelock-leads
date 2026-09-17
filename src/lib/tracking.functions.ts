@@ -216,6 +216,35 @@ export const trackVisitorEvent = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+export const clearTrackingData = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+
+    if (!isAdmin) throw new Error("Acesso restrito ao administrador.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { error: eventsError } = await supabaseAdmin
+      .from("analytics_events")
+      .delete()
+      .not("session_id", "is", null);
+
+    if (eventsError) throw new Error(eventsError.message);
+
+    const { error: sessionsError } = await supabaseAdmin
+      .from("analytics_sessions")
+      .delete()
+      .not("id", "is", null);
+
+    if (sessionsError) throw new Error(sessionsError.message);
+
+    return { ok: true as const };
+  });
+
 export const listVisitorSessions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

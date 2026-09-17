@@ -3,7 +3,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { getTrackingSettings, listVisitorSessions, saveTrackingSettings } from "@/lib/tracking.functions";
+import {
+  clearTrackingData,
+  getTrackingSettings,
+  listVisitorSessions,
+  saveTrackingSettings,
+} from "@/lib/tracking.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { listLeads, deleteLead, deleteAllLeads, type LeadRow } from "@/lib/leads.functions";
 import { formatDateTime, formatWhatsapp, whatsappLink } from "@/lib/lead-validation";
@@ -45,6 +50,8 @@ function PainelPage() {
   const fetchTrackingSettings = useServerFn(getTrackingSettings);
   const updateTrackingSettings = useServerFn(saveTrackingSettings);
   const fetchVisitors = useServerFn(listVisitorSessions);
+  const clearTracking = useServerFn(clearTrackingData);
+  const [clearingTracking, setClearingTracking] = useState(false);
 
   const { data: visitors = [], error: visitorsError } = useQuery({
     queryKey: ["visitor-sessions"],
@@ -125,6 +132,24 @@ function PainelPage() {
       await queryClient.invalidateQueries({ queryKey: ["leads"] });
     } finally {
       setWiping(false);
+    }
+  }
+
+  async function handleClearTracking() {
+    if (
+      !window.confirm(
+        "Limpar todo o rastreamento? Visitantes e eventos serão excluídos permanentemente.",
+      )
+    ) {
+      return;
+    }
+
+    setClearingTracking(true);
+    try {
+      await clearTracking();
+      await queryClient.invalidateQueries({ queryKey: ["visitor-sessions"] });
+    } finally {
+      setClearingTracking(false);
     }
   }
 
@@ -330,10 +355,22 @@ function PainelPage() {
 
       {section === "visitors" ? (
         <section className="surface-card mt-6 rounded-2xl p-6">
-          <h2 className="text-xl font-extrabold">Visitantes em /ufhurd</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Um visitante é considerado online quando enviou atividade nos últimos 30 segundos.
-          </p>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-extrabold">Visitantes em /ufhurd</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Um visitante é considerado online quando enviou atividade nos últimos 30 segundos.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={clearingTracking}
+              onClick={() => void handleClearTracking()}
+            >
+              {clearingTracking ? "Limpando..." : "Limpar rastreamento"}
+            </Button>
+          </div>
 
           <div className="mt-5 grid gap-3">
             {visitorsError ? (
