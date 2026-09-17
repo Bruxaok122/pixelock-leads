@@ -6,6 +6,13 @@ const TRACKED_PATH = "/ufhurd";
 const META_PIXEL_ID_PATTERN = /^\d{5,20}$/;
 const META_EVENTS = ["PageView", "ViewContent", "InitiateCheckout", "Lead"] as const;
 
+function analyticsEventType(eventName: string, converted: boolean) {
+  if (converted || eventName === "Lead") return "lead_submitted";
+  if (eventName === "PixUnlocked") return "form_unlocked";
+  if (eventName === "VideoProgress" || eventName === "Heartbeat") return "video_progress";
+  return "page_view";
+}
+
 export interface VisitorSession {
   session_id: string;
   path: string;
@@ -30,7 +37,10 @@ function getIpAddress() {
 }
 
 function isValidSessionId(value: unknown): value is string {
-  return typeof value === "string" && /^[a-zA-Z0-9_-]{16,100}$/.test(value);
+  return (
+    typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+  );
 }
 
 export const getTrackingSettings = createServerFn({ method: "GET" }).handler(async () => {
@@ -148,13 +158,21 @@ export const trackVisitorEvent = createServerFn({ method: "POST" })
     const ipAddress = getIpAddress();
 
     const now = new Date().toISOString();
+    const { data: existingSession, error: existingSessionError } = await supabaseAdmin
+      .from("analytics_sessions")
+      .select("max_video_seconds")
+      .eq("id", data.sessionId)
+      .maybeSingle();
+
+    if (existingSessionError) throw new Error(existingSessionError.message);
+
     const { error: sessionError } = await supabaseAdmin.from("analytics_sessions").upsert(
       {
         id: data.sessionId,
         page_path: TRACKED_PATH,
         device_type: userAgent?.includes("Mobile") ? "mobile" : "desktop",
         last_seen_at: now,
-        max_video_seconds: data.videoSeconds,
+        max_video_seconds: Math.max(existingSession?.max_video_seconds ?? 0, data.videoSeconds),
       },
       { onConflict: "id" },
     );
@@ -163,7 +181,7 @@ export const trackVisitorEvent = createServerFn({ method: "POST" })
 
     const { error: eventError } = await supabaseAdmin.from("analytics_events").insert({
       session_id: data.sessionId,
-      event_type: data.converted ? "lead" : data.eventName,
+      event_type: analyticsEventType(data.eventName, data.converted),
       numeric_value: data.videoSeconds,
       target_key: ipAddress === "0.0.0.0" ? null : "tracked",
     });
@@ -183,14 +201,20 @@ export const listVisitorSessions = createServerFn({ method: "GET" })
     if (!isAdmin) throw new Error("Acesso restrito ao administrador.");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("analytics_sessions")
-      .select("id, page_path, started_at, last_seen_at, max_video_seconds, lead_id")
-      .eq("page_path", TRACKED_PATH)
-      .order("last_seen_at", { ascending: false })
-      .limit(500);
+    const [{ data, error }, { data: leadEvents, error: leadEventsError }] = await Promise.all([
+      supabaseAdmin
+        .from("analytics_sessions")
+        .select("id, page_path, started_at, last_seen_at, max_video_seconds, lead_id")
+        .eq("page_path", TRACKED_PATH)
+        .order("last_seen_at", { ascending: false })
+        .limit(500),
+      supabaseAdmin.from("analytics_events").select("session_id").eq("event_type", "lead_submitted"),
+    ]);
 
     if (error) throw new Error(error.message);
+    if (leadEventsError) throw new Error(leadEventsError.message);
+
+    const convertedSessionIds = new Set((leadEvents ?? []).map((event) => event.session_id));
     return (data ?? []).map((session): VisitorSession => ({
       session_id: session.id,
       path: session.page_path,
@@ -198,6 +222,6 @@ export const listVisitorSessions = createServerFn({ method: "GET" })
       last_seen_at: session.last_seen_at,
       video_played: session.max_video_seconds > 0,
       video_seconds: session.max_video_seconds,
-      converted: session.lead_id !== null,
+      converted: session.lead_id !== null || convertedSessionIds.has(session.id),
     }));
   });

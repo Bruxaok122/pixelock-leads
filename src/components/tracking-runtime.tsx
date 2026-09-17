@@ -9,23 +9,32 @@ declare global {
   }
 }
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function createSessionId() {
+  if (typeof window.crypto?.randomUUID === "function") {
+    return window.crypto.randomUUID();
+  }
+
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (character) => {
+    const random = Math.floor(Math.random() * 16);
+    const value = character === "x" ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
+}
+
 function getSessionId() {
   const key = "ufhurd_tracking_session";
 
   try {
     const existing = window.sessionStorage.getItem(key);
-    if (existing) return existing;
+    if (existing && UUID_PATTERN.test(existing)) return existing;
 
-    const randomId =
-      typeof window.crypto?.randomUUID === "function"
-        ? window.crypto.randomUUID().replaceAll("-", "")
-        : `${Math.random().toString(36).slice(2)}${Date.now()}`;
-
-    const value = `${randomId}${Date.now()}`;
+    const value = createSessionId();
     window.sessionStorage.setItem(key, value);
     return value;
   } catch {
-    return `${Math.random().toString(36).slice(2)}${Date.now()}`;
+    return createSessionId();
   }
 }
 
