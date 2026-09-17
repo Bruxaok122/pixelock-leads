@@ -91,6 +91,9 @@ function PainelPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "analytics_sessions" }, () => {
         void queryClient.invalidateQueries({ queryKey: ["visitor-sessions"] });
       })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "analytics_events" }, () => {
+        void queryClient.invalidateQueries({ queryKey: ["visitor-sessions"] });
+      })
       .subscribe();
 
     return () => {
@@ -348,17 +351,28 @@ function PainelPage() {
               return (
                 <article key={visitor.session_id} className="rounded-xl border border-border bg-secondary/40 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className={`text-sm font-bold ${online ? "text-success" : "text-muted-foreground"}`}>
-                      {online ? "● Online" : "○ Offline"}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`text-sm font-bold ${online ? "text-success" : "text-muted-foreground"}`}>
+                        {online ? "● Online" : "○ Offline"}
+                      </span>
+                      {visitor.return_visit ? (
+                        <span className="rounded-full bg-warning/20 px-2.5 py-1 text-[11px] font-extrabold text-warning-foreground">
+                          Retorno
+                        </span>
+                      ) : null}
+                    </div>
                     <span className="text-xs text-muted-foreground">
                       Última atividade: {formatDateTime(visitor.last_seen_at)}
                     </span>
                   </div>
                   <div className="mt-3 grid gap-1 text-sm sm:grid-cols-3">
                     <span>
-                      {visitor.last_event === "video_played"
-                        ? "▶ Deu play novamente"
+                      {visitor.last_event === "pix_typing"
+                        ? "✍️ Digitando chave Pix"
+                        : visitor.last_event === "whatsapp_typing"
+                          ? "📱 Digitando WhatsApp"
+                          : visitor.last_event === "video_played"
+                            ? "▶ Deu play novamente"
                         : visitor.last_event === "video_paused"
                           ? "⏸ Parou o vídeo"
                           : visitor.last_event === "form_unlocked"

@@ -136,7 +136,7 @@ export function TrackingRuntime({
       if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) return;
 
       const now = Date.now();
-      if (now - lastTypingAtRef.current < 350) return;
+      if (now - lastTypingAtRef.current < 100) return;
       lastTypingAtRef.current = now;
 
       if (target.id === "pix-key") {
