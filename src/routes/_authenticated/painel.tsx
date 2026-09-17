@@ -415,29 +415,30 @@ function PainelPage() {
               </div>
             </dl>
 
-            <div className="mt-4 flex gap-2">
-            <a
-              href={whatsappLink(lead.whatsapp)}
-              target="_blank"
-              rel="noreferrer"
-              className="btn-cta mt-4 flex min-h-11 items-center justify-center rounded-xl text-sm font-extrabold"
-            >
-              Chamar no WhatsApp
-            </a>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={busyId === lead.id}
-              onClick={async () => {
-                if (!window.confirm("Excluir este lead?")) return;
-                setBusyId(lead.id);
-                await removeLead({ data: { id: lead.id } });
-                await queryClient.invalidateQueries({ queryKey: ["leads"] });
-                setBusyId(null);
-              }}
-            >
-              {busyId === lead.id ? "..." : "Excluir"}
-            </Button>
+            <div className="mt-4 flex items-stretch gap-2">
+              <a
+                href={whatsappLink(lead.whatsapp)}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-cta flex min-h-11 flex-1 items-center justify-center rounded-xl px-3 text-center text-sm font-extrabold"
+              >
+                Chamar no WhatsApp
+              </a>
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-11 flex-1"
+                disabled={busyId === lead.id}
+                onClick={async () => {
+                  if (!window.confirm("Excluir este lead?")) return;
+                  setBusyId(lead.id);
+                  await removeLead({ data: { id: lead.id } });
+                  await queryClient.invalidateQueries({ queryKey: ["leads"] });
+                  setBusyId(null);
+                }}
+              >
+                {busyId === lead.id ? "..." : "Excluir"}
+              </Button>
             </div>
           </article>
         ))}
