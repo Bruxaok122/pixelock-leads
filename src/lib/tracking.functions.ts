@@ -6,6 +6,13 @@ const TRACKED_PATH = "/ufhurd";
 const META_PIXEL_ID_PATTERN = /^\d{5,20}$/;
 const META_EVENTS = ["PageView", "ViewContent", "InitiateCheckout", "Lead"] as const;
 
+function analyticsEventType(eventName: string, converted: boolean) {
+  if (converted || eventName === "Lead") return "lead_submitted";
+  if (eventName === "PixUnlocked") return "form_unlocked";
+  if (eventName === "VideoProgress" || eventName === "Heartbeat") return "video_progress";
+  return "page_view";
+}
+
 export interface VisitorSession {
   session_id: string;
   path: string;
@@ -166,7 +173,7 @@ export const trackVisitorEvent = createServerFn({ method: "POST" })
 
     const { error: eventError } = await supabaseAdmin.from("analytics_events").insert({
       session_id: data.sessionId,
-      event_type: data.converted ? "lead" : data.eventName,
+      event_type: analyticsEventType(data.eventName, data.converted),
       numeric_value: data.videoSeconds,
       target_key: ipAddress === "0.0.0.0" ? null : "tracked",
     });
@@ -193,7 +200,7 @@ export const listVisitorSessions = createServerFn({ method: "GET" })
         .eq("page_path", TRACKED_PATH)
         .order("last_seen_at", { ascending: false })
         .limit(500),
-      supabaseAdmin.from("analytics_events").select("session_id").eq("event_type", "lead"),
+      supabaseAdmin.from("analytics_events").select("session_id").eq("event_type", "lead_submitted"),
     ]);
 
     if (error) throw new Error(error.message);
