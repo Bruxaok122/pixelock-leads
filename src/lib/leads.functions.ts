@@ -21,11 +21,15 @@ export const getClaimStatus = createServerFn({ method: "GET" }).handler(async ()
     "0.0.0.0";
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("leads")
     .select("id, created_at")
     .eq("ip_address", ip)
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
+
+  if (error) throw new Error(error.message);
 
   return { alreadyClaimed: Boolean(data), claimedAt: data?.created_at ?? null };
 });
@@ -46,11 +50,17 @@ export const submitLead = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: existing } = await supabaseAdmin
+    const { data: existing, error: existingError } = await supabaseAdmin
       .from("leads")
       .select("id")
       .eq("ip_address", ip)
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
+
+    if (existingError) {
+      throw new Error(existingError.message);
+    }
 
     if (existing) {
       return {
@@ -97,7 +107,10 @@ export const listLeads = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(500);
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      throw new Error(`Não foi possível consultar os leads: ${error.message}`);
+    }
+
     return (data ?? []) as LeadRow[];
   });
 

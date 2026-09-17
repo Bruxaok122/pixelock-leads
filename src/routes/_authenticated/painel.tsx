@@ -88,7 +88,10 @@ function PainelPage() {
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    retry: 2,
+    retry: 3,
+    // Não apaga os leads já exibidos durante uma falha momentânea
+    // na consulta autenticada ao banco.
+    placeholderData: (previousData) => previousData,
   });
 
   const leads: LeadRow[] = data ?? [];
@@ -221,8 +224,12 @@ function PainelPage() {
         </p>
       ) : null}
 
-      {isLoading ? <p className="mt-8 text-sm text-muted-foreground">Carregando...</p> : null}
-      {error ? <p className="mt-8 text-sm text-destructive">{(error as Error).message}</p> : null}
+      {isLoading && !data ? <p className="mt-8 text-sm text-muted-foreground">Carregando leads...</p> : null}
+      {error ? (
+        <p className="mt-8 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {(error as Error).message}. Os dados anteriores continuam preservados e uma nova tentativa será feita automaticamente.
+        </p>
+      ) : null}
 
       {section === "dashboard" ? (
         <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
