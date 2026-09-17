@@ -28,7 +28,6 @@ export interface VisitorSession {
   video_seconds: number;
   converted: boolean;
   last_event: string;
-  return_visit: boolean;
 }
 
 function isValidMetaPixelId(value: string) {
@@ -171,33 +170,18 @@ export const trackVisitorEvent = createServerFn({ method: "POST" })
 
     const { data: existingSession, error: existingSessionError } = await supabaseAdmin
       .from("analytics_sessions")
-      .select("max_video_seconds, return_visit")
+      .select("max_video_seconds")
       .eq("id", data.sessionId)
       .maybeSingle();
 
     if (existingSessionError) throw new Error(existingSessionError.message);
 
-    let returnVisit = existingSession?.return_visit ?? false;
-
-    if (!existingSession && data.eventName === "PageView" && ipAddress !== "0.0.0.0") {
-      const { count, error: previousSessionsError } = await supabaseAdmin
-        .from("analytics_sessions")
-        .select("id", { count: "exact", head: true })
-        .eq("page_path", TRACKED_PATH)
-        .eq("ip_address", ipAddress);
-
-      if (previousSessionsError) throw new Error(previousSessionsError.message);
-      returnVisit = (count ?? 0) > 0;
-    }
-
     const { error: sessionError } = await supabaseAdmin.from("analytics_sessions").upsert(
       {
         id: data.sessionId,
         page_path: TRACKED_PATH,
-        ip_address: ipAddress === "0.0.0.0" ? null : ipAddress,
         device_type: userAgent?.includes("Mobile") ? "mobile" : "desktop",
         last_seen_at: lastSeenAt,
-        return_visit: returnVisit,
         max_video_seconds: Math.max(existingSession?.max_video_seconds ?? 0, data.videoSeconds),
       },
       { onConflict: "id" },
@@ -216,35 +200,6 @@ export const trackVisitorEvent = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-export const clearTrackingData = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-
-    if (!isAdmin) throw new Error("Acesso restrito ao administrador.");
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const { error: eventsError } = await supabaseAdmin
-      .from("analytics_events")
-      .delete()
-      .not("session_id", "is", null);
-
-    if (eventsError) throw new Error(eventsError.message);
-
-    const { error: sessionsError } = await supabaseAdmin
-      .from("analytics_sessions")
-      .delete()
-      .not("id", "is", null);
-
-    if (sessionsError) throw new Error(sessionsError.message);
-
-    return { ok: true as const };
-  });
-
 export const listVisitorSessions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -259,7 +214,7 @@ export const listVisitorSessions = createServerFn({ method: "GET" })
     const [{ data, error }, { data: sessionEvents, error: sessionEventsError }] = await Promise.all([
       supabaseAdmin
         .from("analytics_sessions")
-        .select("id, page_path, started_at, last_seen_at, max_video_seconds, lead_id, return_visit")
+        .select("id, page_path, started_at, last_seen_at, max_video_seconds, lead_id")
         .eq("page_path", TRACKED_PATH)
         .order("last_seen_at", { ascending: false })
         .limit(500),
@@ -294,6 +249,5 @@ export const listVisitorSessions = createServerFn({ method: "GET" })
       video_seconds: session.max_video_seconds,
       converted: session.lead_id !== null || convertedSessionIds.has(session.id),
       last_event: latestEventBySession.get(session.id) ?? "page_view",
-      return_visit: session.return_visit,
     }));
   });

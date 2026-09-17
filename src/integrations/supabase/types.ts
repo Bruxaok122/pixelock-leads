@@ -89,14 +89,12 @@ export type Database = {
           device_type: string
           duration_ms: number
           id: string
-          ip_address: string | null
           last_seen_at: string
           lead_id: string | null
           max_scroll_percent: number
           max_video_seconds: number
           page_path: string
           referrer: string | null
-          return_visit: boolean
           started_at: string
         }
         Insert: {
@@ -105,14 +103,12 @@ export type Database = {
           device_type?: string
           duration_ms?: number
           id: string
-          ip_address?: string | null
           last_seen_at?: string
           lead_id?: string | null
           max_scroll_percent?: number
           max_video_seconds?: number
           page_path?: string
           referrer?: string | null
-          return_visit?: boolean
           started_at?: string
         }
         Update: {
@@ -121,14 +117,12 @@ export type Database = {
           device_type?: string
           duration_ms?: number
           id?: string
-          ip_address?: string | null
           last_seen_at?: string
           lead_id?: string | null
           max_scroll_percent?: number
           max_video_seconds?: number
           page_path?: string
           referrer?: string | null
-          return_visit?: boolean
           started_at?: string
         }
         Relationships: [

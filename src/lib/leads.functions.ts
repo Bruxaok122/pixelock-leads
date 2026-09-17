@@ -21,15 +21,11 @@ export const getClaimStatus = createServerFn({ method: "GET" }).handler(async ()
     "0.0.0.0";
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
+  const { data } = await supabaseAdmin
     .from("leads")
     .select("id, created_at")
     .eq("ip_address", ip)
-    .order("created_at", { ascending: false })
-    .limit(1)
     .maybeSingle();
-
-  if (error) throw new Error(error.message);
 
   return { alreadyClaimed: Boolean(data), claimedAt: data?.created_at ?? null };
 });
@@ -50,17 +46,11 @@ export const submitLead = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: existing, error: existingError } = await supabaseAdmin
+    const { data: existing } = await supabaseAdmin
       .from("leads")
       .select("id")
       .eq("ip_address", ip)
-      .order("created_at", { ascending: false })
-      .limit(1)
       .maybeSingle();
-
-    if (existingError) {
-      throw new Error(existingError.message);
-    }
 
     if (existing) {
       return {
@@ -95,22 +85,19 @@ export const submitLead = createServerFn({ method: "POST" })
 export const listLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context);
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Acesso restrito ao administrador.");
 
-    // A autenticação continua sendo validada pelo middleware acima.
-    // A leitura usa o cliente administrativo para não depender de uma
-    // política RLS adicional e evitar que os leads desapareçam do painel.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await context.supabase
       .from("leads")
       .select("id, pix_key, whatsapp, ip_address, user_agent, status, created_at")
       .order("created_at", { ascending: false })
       .limit(500);
 
-    if (error) {
-      throw new Error(`Não foi possível consultar os leads: ${error.message}`);
-    }
-
+    if (error) throw new Error(error.message);
     return (data ?? []) as LeadRow[];
   });
 

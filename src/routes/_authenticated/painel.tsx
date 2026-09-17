@@ -3,12 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  clearTrackingData,
-  getTrackingSettings,
-  listVisitorSessions,
-  saveTrackingSettings,
-} from "@/lib/tracking.functions";
+import { getTrackingSettings, listVisitorSessions, saveTrackingSettings } from "@/lib/tracking.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { listLeads, deleteLead, deleteAllLeads, type LeadRow } from "@/lib/leads.functions";
 import { formatDateTime, formatWhatsapp, whatsappLink } from "@/lib/lead-validation";
@@ -38,18 +33,9 @@ function PainelPage() {
   const { play, unlock } = useLeadChime();
   const [soundOn, setSoundOn] = useState(false);
   const knownCount = useRef<number | null>(null);
-  const [currentTime, setCurrentTime] = useState(() => Date.now());
 
   useEffect(() => {
     setSoundOn(window.localStorage.getItem("painel-sound-enabled") === "true");
-  }, []);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 1000);
-
-    return () => window.clearInterval(timer);
   }, []);
   const [section, setSection] = useState<"dashboard" | "leads" | "pixel" | "visitors">("dashboard");
   const [pixelId, setPixelId] = useState("");
@@ -59,8 +45,6 @@ function PainelPage() {
   const fetchTrackingSettings = useServerFn(getTrackingSettings);
   const updateTrackingSettings = useServerFn(saveTrackingSettings);
   const fetchVisitors = useServerFn(listVisitorSessions);
-  const clearTracking = useServerFn(clearTrackingData);
-  const [clearingTracking, setClearingTracking] = useState(false);
 
   const { data: visitors = [], error: visitorsError } = useQuery({
     queryKey: ["visitor-sessions"],
@@ -92,15 +76,7 @@ function PainelPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["leads"],
     queryFn: () => fetchLeads(),
-    // Mantém os leads sincronizados mesmo se o Realtime estiver indisponível.
-    refetchInterval: 3000,
-    refetchIntervalInBackground: true,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    retry: 3,
-    // Não apaga os leads já exibidos durante uma falha momentânea
-    // na consulta autenticada ao banco.
-    placeholderData: (previousData) => previousData,
+    refetchInterval: 20000,
   });
 
   const leads: LeadRow[] = data ?? [];
@@ -113,9 +89,6 @@ function PainelPage() {
         play();
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "analytics_sessions" }, () => {
-        void queryClient.invalidateQueries({ queryKey: ["visitor-sessions"] });
-      })
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "analytics_events" }, () => {
         void queryClient.invalidateQueries({ queryKey: ["visitor-sessions"] });
       })
       .subscribe();
@@ -147,27 +120,8 @@ function PainelPage() {
     try {
       await removeAllLeads();
       await queryClient.invalidateQueries({ queryKey: ["leads"] });
-      await queryClient.refetchQueries({ queryKey: ["leads"], type: "active" });
     } finally {
       setWiping(false);
-    }
-  }
-
-  async function handleClearTracking() {
-    if (
-      !window.confirm(
-        "Limpar todo o rastreamento? Visitantes e eventos serão excluídos permanentemente.",
-      )
-    ) {
-      return;
-    }
-
-    setClearingTracking(true);
-    try {
-      await clearTracking();
-      await queryClient.invalidateQueries({ queryKey: ["visitor-sessions"] });
-    } finally {
-      setClearingTracking(false);
     }
   }
 
@@ -233,12 +187,8 @@ function PainelPage() {
         </p>
       ) : null}
 
-      {isLoading && !data ? <p className="mt-8 text-sm text-muted-foreground">Carregando leads...</p> : null}
-      {error ? (
-        <p className="mt-8 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {(error as Error).message}. Os dados anteriores continuam preservados e uma nova tentativa será feita automaticamente.
-        </p>
-      ) : null}
+      {isLoading ? <p className="mt-8 text-sm text-muted-foreground">Carregando...</p> : null}
+      {error ? <p className="mt-8 text-sm text-destructive">{(error as Error).message}</p> : null}
 
       {section === "dashboard" ? (
         <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -255,7 +205,7 @@ function PainelPage() {
           <article className="surface-card rounded-2xl p-5">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Online agora</p>
             <p className="mt-2 text-3xl font-extrabold">
-              {visitors.filter((visitor) => currentTime - new Date(visitor.last_seen_at).getTime() < 30000).length}
+              {visitors.filter((visitor) => Date.now() - new Date(visitor.last_seen_at).getTime() < 30000).length}
             </p>
           </article>
           <article className="surface-card rounded-2xl p-5">
@@ -377,22 +327,10 @@ function PainelPage() {
 
       {section === "visitors" ? (
         <section className="surface-card mt-6 rounded-2xl p-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-extrabold">Visitantes em /ufhurd</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Um visitante é considerado online quando enviou atividade nos últimos 30 segundos.
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={clearingTracking}
-              onClick={() => void handleClearTracking()}
-            >
-              {clearingTracking ? "Limpando..." : "Limpar rastreamento"}
-            </Button>
-          </div>
+          <h2 className="text-xl font-extrabold">Visitantes em /ufhurd</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Um visitante é considerado online quando enviou atividade nos últimos 30 segundos.
+          </p>
 
           <div className="mt-5 grid gap-3">
             {visitorsError ? (
@@ -406,32 +344,21 @@ function PainelPage() {
             {visitors.map((visitor) => {
               // O heartbeat é enviado a cada 15s. Com 25s, fechamentos de
               // navegador e abas encerradas ficam offline rapidamente.
-              const online = currentTime - new Date(visitor.last_seen_at).getTime() < 20000;
+              const online = Date.now() - new Date(visitor.last_seen_at).getTime() < 20000;
               return (
                 <article key={visitor.session_id} className="rounded-xl border border-border bg-secondary/40 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`text-sm font-bold ${online ? "text-success" : "text-muted-foreground"}`}>
-                        {online ? "● Online" : "○ Offline"}
-                      </span>
-                      {visitor.return_visit ? (
-                        <span className="rounded-full bg-warning/20 px-2.5 py-1 text-[11px] font-extrabold text-warning-foreground">
-                          Retorno
-                        </span>
-                      ) : null}
-                    </div>
+                    <span className={`text-sm font-bold ${online ? "text-success" : "text-muted-foreground"}`}>
+                      {online ? "● Online" : "○ Offline"}
+                    </span>
                     <span className="text-xs text-muted-foreground">
                       Última atividade: {formatDateTime(visitor.last_seen_at)}
                     </span>
                   </div>
                   <div className="mt-3 grid gap-1 text-sm sm:grid-cols-3">
                     <span>
-                      {visitor.last_event === "pix_typing"
-                        ? "✍️ Digitando chave Pix"
-                        : visitor.last_event === "whatsapp_typing"
-                          ? "📱 Digitando WhatsApp"
-                          : visitor.last_event === "video_played"
-                            ? "▶ Deu play novamente"
+                      {visitor.last_event === "video_played"
+                        ? "▶ Deu play novamente"
                         : visitor.last_event === "video_paused"
                           ? "⏸ Parou o vídeo"
                           : visitor.last_event === "form_unlocked"
@@ -526,14 +453,10 @@ function PainelPage() {
                 disabled={busyId === lead.id}
                 onClick={async () => {
                   if (!window.confirm("Excluir este lead?")) return;
-
                   setBusyId(lead.id);
-                  try {
-                    await removeLead({ data: { id: lead.id } });
-                    await queryClient.invalidateQueries({ queryKey: ["leads"] });
-                  } finally {
-                    setBusyId(null);
-                  }
+                  await removeLead({ data: { id: lead.id } });
+                  await queryClient.invalidateQueries({ queryKey: ["leads"] });
+                  setBusyId(null);
                 }}
               >
                 {busyId === lead.id ? "..." : "Excluir"}
