@@ -46,7 +46,7 @@ function PainelPage() {
   const updateTrackingSettings = useServerFn(saveTrackingSettings);
   const fetchVisitors = useServerFn(listVisitorSessions);
 
-  const { data: visitors = [] } = useQuery({
+  const { data: visitors = [], error: visitorsError } = useQuery({
     queryKey: ["visitor-sessions"],
     queryFn: () => fetchVisitors(),
     // Mantém o painel atualizado mesmo quando o realtime do Supabase
@@ -192,6 +192,11 @@ function PainelPage() {
 
       {section === "dashboard" ? (
         <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {visitorsError ? (
+            <p className="col-span-full rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              Não foi possível atualizar as métricas agora. A próxima tentativa será automática.
+            </p>
+          ) : null}
           <article className="surface-card rounded-2xl p-5">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Visitantes registrados</p>
             <p className="mt-2 text-3xl font-extrabold">{visitors.length}</p>
@@ -328,6 +333,14 @@ function PainelPage() {
           </p>
 
           <div className="mt-5 grid gap-3">
+            {visitorsError ? (
+              <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                Não foi possível atualizar os visitantes agora. Tentando novamente automaticamente.
+              </p>
+            ) : null}
+            {!visitorsError && visitors.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum visitante registrado ainda.</p>
+            ) : null}
             {visitors.map((visitor) => {
               const online = Date.now() - new Date(visitor.last_seen_at).getTime() < 30000;
               return (
