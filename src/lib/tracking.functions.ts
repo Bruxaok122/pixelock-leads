@@ -186,14 +186,20 @@ export const listVisitorSessions = createServerFn({ method: "GET" })
     if (!isAdmin) throw new Error("Acesso restrito ao administrador.");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("analytics_sessions")
-      .select("id, page_path, started_at, last_seen_at, max_video_seconds, lead_id")
-      .eq("page_path", TRACKED_PATH)
-      .order("last_seen_at", { ascending: false })
-      .limit(500);
+    const [{ data, error }, { data: leadEvents, error: leadEventsError }] = await Promise.all([
+      supabaseAdmin
+        .from("analytics_sessions")
+        .select("id, page_path, started_at, last_seen_at, max_video_seconds, lead_id")
+        .eq("page_path", TRACKED_PATH)
+        .order("last_seen_at", { ascending: false })
+        .limit(500),
+      supabaseAdmin.from("analytics_events").select("session_id").eq("event_type", "lead"),
+    ]);
 
     if (error) throw new Error(error.message);
+    if (leadEventsError) throw new Error(leadEventsError.message);
+
+    const convertedSessionIds = new Set((leadEvents ?? []).map((event) => event.session_id));
     return (data ?? []).map((session): VisitorSession => ({
       session_id: session.id,
       path: session.page_path,
@@ -201,6 +207,6 @@ export const listVisitorSessions = createServerFn({ method: "GET" })
       last_seen_at: session.last_seen_at,
       video_played: session.max_video_seconds > 0,
       video_seconds: session.max_video_seconds,
-      converted: session.lead_id !== null,
+      converted: session.lead_id !== null || convertedSessionIds.has(session.id),
     }));
   });
