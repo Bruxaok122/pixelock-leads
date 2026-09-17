@@ -58,12 +58,13 @@ export function TrackingRuntime({
   const convertedRef = useRef(converted);
   const videoSecondsRef = useRef(videoSeconds);
   const videoPlayingRef = useRef(videoPlaying);
+  const lastTypingAtRef = useRef(0);
+  const lastScrollAtRef = useRef(0);
 
   useEffect(() => {
     convertedRef.current = converted;
     videoSecondsRef.current = videoSeconds;
-    videoPlayingRef.current = videoPlaying;
-  }, [converted, videoPlaying, videoSeconds]);
+  }, [converted, videoSeconds]);
 
   useEffect(() => {
     const sessionId = getSessionId();
@@ -115,10 +116,51 @@ export function TrackingRuntime({
       });
     };
 
+    const sendImmediateEvent = (eventName: string) => {
+      const currentSessionId = sessionIdRef.current;
+      if (!currentSessionId) return;
+
+      void sendEvent({
+        data: {
+          sessionId: currentSessionId,
+          eventName,
+          videoSeconds: videoSecondsRef.current,
+          videoPlayed: playedRef.current,
+          converted: convertedRef.current,
+        },
+      });
+    };
+
+    const handleInput = (event: Event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) return;
+
+      const now = Date.now();
+      if (now - lastTypingAtRef.current < 350) return;
+      lastTypingAtRef.current = now;
+
+      if (target.id === "pix-key") {
+        sendImmediateEvent("PixTyping");
+      } else if (target.id === "whatsapp") {
+        sendImmediateEvent("WhatsAppTyping");
+      }
+    };
+
+    const handleScroll = () => {
+      const now = Date.now();
+      if (now - lastScrollAtRef.current < 500) return;
+      lastScrollAtRef.current = now;
+      sendImmediateEvent("PageScroll");
+    };
+
     window.addEventListener("pagehide", handlePageExit);
+    document.addEventListener("input", handleInput, true);
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
       window.removeEventListener("pagehide", handlePageExit);
+      document.removeEventListener("input", handleInput, true);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, [getSettings, sendEvent]);
 

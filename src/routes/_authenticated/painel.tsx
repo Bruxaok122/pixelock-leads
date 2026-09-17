@@ -344,7 +344,7 @@ function PainelPage() {
             {visitors.map((visitor) => {
               // O heartbeat é enviado a cada 15s. Com 25s, fechamentos de
               // navegador e abas encerradas ficam offline rapidamente.
-              const online = Date.now() - new Date(visitor.last_seen_at).getTime() < 25000;
+              const online = Date.now() - new Date(visitor.last_seen_at).getTime() < 20000;
               return (
                 <article key={visitor.session_id} className="rounded-xl border border-border bg-secondary/40 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -365,11 +365,17 @@ function PainelPage() {
                             ? "🔓 Pix liberado"
                             : visitor.last_event === "page_exit"
                               ? "↩ Saiu da página"
-                              : visitor.last_event === "lead_submitted"
-                                ? "✅ Enviou os dados"
-                                : visitor.video_played
-                                  ? "▶ Assistindo o vídeo"
-                                  : "⌛ Ainda não deu play"}
+                              : visitor.last_event === "pix_typing"
+                                ? "✍️ Digitando a chave Pix"
+                                : visitor.last_event === "whatsapp_typing"
+                                  ? "📱 Digitando o WhatsApp"
+                                  : visitor.last_event === "page_scrolled"
+                                    ? "↕️ Rolando a página"
+                                    : visitor.last_event === "lead_submitted"
+                                      ? "✅ Enviou os dados"
+                                      : visitor.video_played
+                                        ? "▶ Assistindo o vídeo"
+                                        : "⌛ Ainda não deu play"}
                     </span>
                     <span>{visitor.video_seconds >= 120 ? "🔓 Pix liberado" : `${visitor.video_seconds}s de vídeo`}</span>
                     <span>{visitor.converted ? "Lead convertido" : "Sem conversão"}</span>

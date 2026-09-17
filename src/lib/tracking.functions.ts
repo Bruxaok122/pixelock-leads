@@ -11,6 +11,9 @@ function analyticsEventType(eventName: string, converted: boolean) {
   if (eventName === "PixUnlocked") return "form_unlocked";
   if (eventName === "VideoPlay") return "video_played";
   if (eventName === "VideoPause") return "video_paused";
+  if (eventName === "PixTyping") return "pix_typing";
+  if (eventName === "WhatsAppTyping") return "whatsapp_typing";
+  if (eventName === "PageScroll") return "page_scrolled";
   if (eventName === "PageExit") return "page_exit";
   if (eventName === "VideoProgress" || eventName === "Heartbeat") return "video_progress";
   return "page_view";
