@@ -158,13 +158,21 @@ export const trackVisitorEvent = createServerFn({ method: "POST" })
     const ipAddress = getIpAddress();
 
     const now = new Date().toISOString();
+    const { data: existingSession, error: existingSessionError } = await supabaseAdmin
+      .from("analytics_sessions")
+      .select("max_video_seconds")
+      .eq("id", data.sessionId)
+      .maybeSingle();
+
+    if (existingSessionError) throw new Error(existingSessionError.message);
+
     const { error: sessionError } = await supabaseAdmin.from("analytics_sessions").upsert(
       {
         id: data.sessionId,
         page_path: TRACKED_PATH,
         device_type: userAgent?.includes("Mobile") ? "mobile" : "desktop",
         last_seen_at: now,
-        max_video_seconds: data.videoSeconds,
+        max_video_seconds: Math.max(existingSession?.max_video_seconds ?? 0, data.videoSeconds),
       },
       { onConflict: "id" },
     );
