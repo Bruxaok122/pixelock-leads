@@ -83,7 +83,12 @@ function PainelPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["leads"],
     queryFn: () => fetchLeads(),
-    refetchInterval: 20000,
+    // Mantém os leads sincronizados mesmo se o Realtime estiver indisponível.
+    refetchInterval: 3000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    retry: 2,
   });
 
   const leads: LeadRow[] = data ?? [];
@@ -130,6 +135,7 @@ function PainelPage() {
     try {
       await removeAllLeads();
       await queryClient.invalidateQueries({ queryKey: ["leads"] });
+      await queryClient.refetchQueries({ queryKey: ["leads"], type: "active" });
     } finally {
       setWiping(false);
     }
@@ -504,10 +510,14 @@ function PainelPage() {
                 disabled={busyId === lead.id}
                 onClick={async () => {
                   if (!window.confirm("Excluir este lead?")) return;
+
                   setBusyId(lead.id);
-                  await removeLead({ data: { id: lead.id } });
-                  await queryClient.invalidateQueries({ queryKey: ["leads"] });
-                  setBusyId(null);
+                  try {
+                    await removeLead({ data: { id: lead.id } });
+                    await queryClient.invalidateQueries({ queryKey: ["leads"] });
+                  } finally {
+                    setBusyId(null);
+                  }
                 }}
               >
                 {busyId === lead.id ? "..." : "Excluir"}

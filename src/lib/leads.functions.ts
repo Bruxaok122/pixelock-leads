@@ -85,13 +85,13 @@ export const submitLead = createServerFn({ method: "POST" })
 export const listLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (!isAdmin) throw new Error("Acesso restrito ao administrador.");
+    await assertAdmin(context);
 
-    const { data, error } = await context.supabase
+    // A autenticação continua sendo validada pelo middleware acima.
+    // A leitura usa o cliente administrativo para não depender de uma
+    // política RLS adicional e evitar que os leads desapareçam do painel.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
       .from("leads")
       .select("id, pix_key, whatsapp, ip_address, user_agent, status, created_at")
       .order("created_at", { ascending: false })
