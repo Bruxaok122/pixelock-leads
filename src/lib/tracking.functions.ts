@@ -9,6 +9,9 @@ const META_EVENTS = ["PageView", "ViewContent", "InitiateCheckout", "Lead"] as c
 function analyticsEventType(eventName: string, converted: boolean) {
   if (converted || eventName === "Lead") return "lead_submitted";
   if (eventName === "PixUnlocked") return "form_unlocked";
+  if (eventName === "VideoPlay") return "video_played";
+  if (eventName === "VideoPause") return "video_paused";
+  if (eventName === "PageExit") return "page_exit";
   if (eventName === "VideoProgress" || eventName === "Heartbeat") return "video_progress";
   return "page_view";
 }
@@ -21,6 +24,7 @@ export interface VisitorSession {
   video_played: boolean;
   video_seconds: number;
   converted: boolean;
+  last_event: string;
 }
 
 function isValidMetaPixelId(value: string) {
@@ -204,20 +208,35 @@ export const listVisitorSessions = createServerFn({ method: "GET" })
     if (!isAdmin) throw new Error("Acesso restrito ao administrador.");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const [{ data, error }, { data: leadEvents, error: leadEventsError }] = await Promise.all([
+    const [{ data, error }, { data: sessionEvents, error: sessionEventsError }] = await Promise.all([
       supabaseAdmin
         .from("analytics_sessions")
         .select("id, page_path, started_at, last_seen_at, max_video_seconds, lead_id")
         .eq("page_path", TRACKED_PATH)
         .order("last_seen_at", { ascending: false })
         .limit(500),
-      supabaseAdmin.from("analytics_events").select("session_id").eq("event_type", "lead_submitted"),
+      supabaseAdmin
+        .from("analytics_events")
+        .select("session_id, event_type, created_at")
+        .order("created_at", { ascending: false })
+        .limit(5000),
     ]);
 
     if (error) throw new Error(error.message);
-    if (leadEventsError) throw new Error(leadEventsError.message);
+    if (sessionEventsError) throw new Error(sessionEventsError.message);
 
-    const convertedSessionIds = new Set((leadEvents ?? []).map((event) => event.session_id));
+    const latestEventBySession = new Map<string, string>();
+    const convertedSessionIds = new Set<string>();
+
+    for (const event of sessionEvents ?? []) {
+      if (!latestEventBySession.has(event.session_id)) {
+        latestEventBySession.set(event.session_id, event.event_type);
+      }
+      if (event.event_type === "lead_submitted") {
+        convertedSessionIds.add(event.session_id);
+      }
+    }
+
     return (data ?? []).map((session): VisitorSession => ({
       session_id: session.id,
       path: session.page_path,
@@ -226,5 +245,6 @@ export const listVisitorSessions = createServerFn({ method: "GET" })
       video_played: session.max_video_seconds > 0,
       video_seconds: session.max_video_seconds,
       converted: session.lead_id !== null || convertedSessionIds.has(session.id),
+      last_event: latestEventBySession.get(session.id) ?? "page_view",
     }));
   });

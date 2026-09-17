@@ -127,7 +127,7 @@ function PainelPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-7xl gap-6 px-4 py-6">
-      <aside className="hidden w-56 shrink-0 rounded-2xl border border-border bg-secondary/60 p-3 md:block">
+      <aside className="scrollbar-panel sticky top-6 hidden h-[calc(100vh-3rem)] w-56 shrink-0 overflow-y-auto rounded-2xl border border-border bg-secondary/60 p-3 md:block">
         <p className="px-3 py-2 text-xs font-extrabold uppercase tracking-widest text-muted-foreground">
           Indicador Pro
         </p>
@@ -342,7 +342,9 @@ function PainelPage() {
               <p className="text-sm text-muted-foreground">Nenhum visitante registrado ainda.</p>
             ) : null}
             {visitors.map((visitor) => {
-              const online = Date.now() - new Date(visitor.last_seen_at).getTime() < 30000;
+              // O heartbeat é enviado a cada 15s. Com 25s, fechamentos de
+              // navegador e abas encerradas ficam offline rapidamente.
+              const online = Date.now() - new Date(visitor.last_seen_at).getTime() < 25000;
               return (
                 <article key={visitor.session_id} className="rounded-xl border border-border bg-secondary/40 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -354,7 +356,21 @@ function PainelPage() {
                     </span>
                   </div>
                   <div className="mt-3 grid gap-1 text-sm sm:grid-cols-3">
-                    <span>{visitor.video_played ? "▶ Deu play" : "⏸ Ainda não deu play"}</span>
+                    <span>
+                      {visitor.last_event === "video_played"
+                        ? "▶ Deu play novamente"
+                        : visitor.last_event === "video_paused"
+                          ? "⏸ Parou o vídeo"
+                          : visitor.last_event === "form_unlocked"
+                            ? "🔓 Pix liberado"
+                            : visitor.last_event === "page_exit"
+                              ? "↩ Saiu da página"
+                              : visitor.last_event === "lead_submitted"
+                                ? "✅ Enviou os dados"
+                                : visitor.video_played
+                                  ? "▶ Assistindo o vídeo"
+                                  : "⌛ Ainda não deu play"}
+                    </span>
                     <span>{visitor.video_seconds >= 120 ? "🔓 Pix liberado" : `${visitor.video_seconds}s de vídeo`}</span>
                     <span>{visitor.converted ? "Lead convertido" : "Sem conversão"}</span>
                   </div>

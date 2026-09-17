@@ -40,17 +40,36 @@ function readCurrentTime(host: HTMLElement | null): number | null {
   return null;
 }
 
-export function VturbPlayer({ onTime }: { onTime: (seconds: number) => void }) {
+export function VturbPlayer({
+  onTime,
+  onPlaybackChange,
+}: {
+  onTime: (seconds: number) => void;
+  onPlaybackChange?: (playing: boolean) => void;
+}) {
   const hostRef = useRef<HTMLElement | null>(null);
   const onTimeRef = useRef(onTime);
+  const onPlaybackChangeRef = useRef(onPlaybackChange);
   onTimeRef.current = onTime;
+  onPlaybackChangeRef.current = onPlaybackChange;
 
   useEffect(() => {
     loadPlayerScript();
 
+    let lastPlaying: boolean | null = null;
+
     const interval = setInterval(() => {
+      const video =
+        (hostRef.current?.shadowRoot?.querySelector("video") as HTMLVideoElement | null) ??
+        (hostRef.current?.querySelector("video") as HTMLVideoElement | null);
+
       const seconds = readCurrentTime(hostRef.current);
       if (seconds !== null) onTimeRef.current(seconds);
+
+      if (video && lastPlaying !== !video.paused) {
+        lastPlaying = !video.paused;
+        onPlaybackChangeRef.current?.(lastPlaying);
+      }
     }, 500);
 
     return () => clearInterval(interval);

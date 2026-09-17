@@ -42,10 +42,12 @@ export function TrackingRuntime({
   videoSeconds,
   converted,
   pixUnlocked,
+  videoPlaying,
 }: {
   videoSeconds: number;
   converted: boolean;
   pixUnlocked: boolean;
+  videoPlaying: boolean;
 }) {
   const getSettings = useServerFn(getTrackingSettings);
   const sendEvent = useServerFn(trackVisitorEvent);
@@ -55,11 +57,13 @@ export function TrackingRuntime({
   const pixUnlockedRef = useRef(false);
   const convertedRef = useRef(converted);
   const videoSecondsRef = useRef(videoSeconds);
+  const videoPlayingRef = useRef(videoPlaying);
 
   useEffect(() => {
     convertedRef.current = converted;
     videoSecondsRef.current = videoSeconds;
-  }, [converted, videoSeconds]);
+    videoPlayingRef.current = videoPlaying;
+  }, [converted, videoPlaying, videoSeconds]);
 
   useEffect(() => {
     const sessionId = getSessionId();
@@ -145,6 +149,25 @@ export function TrackingRuntime({
       },
     });
   }, [converted, pixUnlocked, sendEvent, videoSeconds]);
+
+  useEffect(() => {
+    const sessionId = sessionIdRef.current;
+    if (!sessionId) return;
+
+    const eventName = videoPlaying ? "VideoPlay" : "VideoPause";
+    if (videoPlaying === videoPlayingRef.current) return;
+
+    videoPlayingRef.current = videoPlaying;
+    void sendEvent({
+      data: {
+        sessionId,
+        eventName,
+        videoSeconds,
+        videoPlayed: videoPlaying || playedRef.current,
+        converted: convertedRef.current,
+      },
+    });
+  }, [sendEvent, videoPlaying, videoSeconds]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {

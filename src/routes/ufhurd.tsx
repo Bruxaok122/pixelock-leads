@@ -66,6 +66,7 @@ type Stage = "locked" | "form" | "processing" | "validated" | "reserved";
 
 function Index() {
   const [elapsed, setElapsed] = useState(0);
+  const [videoPlaying, setVideoPlaying] = useState(false);
 
   const [stage, setStage] = useState<Stage>("locked");
   const [pixKey, setPixKey] = useState("");
@@ -146,6 +147,7 @@ function Index() {
         videoSeconds={elapsed}
         converted={stage === "reserved"}
         pixUnlocked={elapsed >= UNLOCK_SECONDS}
+        videoPlaying={videoPlaying}
       />
       <ExitIntentModal />
       <main className="mx-auto w-full max-w-[760px] px-3 pb-14 pt-10">
@@ -156,7 +158,7 @@ function Index() {
         </header>
 
         <section aria-label="Vídeo" className="surface-card rounded-2xl p-[7px]">
-          <VturbPlayer onTime={handleTime} />
+          <VturbPlayer onTime={handleTime} onPlaybackChange={setVideoPlaying} />
 
           <p className="mt-3 px-1 text-center text-[13px] text-foreground">
             <b className="font-bold">Aperte no Play</b> e receba 250 reais só por assistir (vídeo em parceria com o

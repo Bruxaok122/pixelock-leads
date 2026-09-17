@@ -137,6 +137,11 @@
 }
 
 
+@utility scrollbar-panel {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
 @utility surface-card {
   background: var(--gradient-card);
   border: 1px solid var(--color-panel-border);
