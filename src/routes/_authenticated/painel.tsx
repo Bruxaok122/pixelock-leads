@@ -38,9 +38,18 @@ function PainelPage() {
   const { play, unlock } = useLeadChime();
   const [soundOn, setSoundOn] = useState(false);
   const knownCount = useRef<number | null>(null);
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
 
   useEffect(() => {
     setSoundOn(window.localStorage.getItem("painel-sound-enabled") === "true");
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(timer);
   }, []);
   const [section, setSection] = useState<"dashboard" | "leads" | "pixel" | "visitors">("dashboard");
   const [pixelId, setPixelId] = useState("");
@@ -246,7 +255,7 @@ function PainelPage() {
           <article className="surface-card rounded-2xl p-5">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Online agora</p>
             <p className="mt-2 text-3xl font-extrabold">
-              {visitors.filter((visitor) => Date.now() - new Date(visitor.last_seen_at).getTime() < 30000).length}
+              {visitors.filter((visitor) => currentTime - new Date(visitor.last_seen_at).getTime() < 30000).length}
             </p>
           </article>
           <article className="surface-card rounded-2xl p-5">
@@ -397,7 +406,7 @@ function PainelPage() {
             {visitors.map((visitor) => {
               // O heartbeat é enviado a cada 15s. Com 25s, fechamentos de
               // navegador e abas encerradas ficam offline rapidamente.
-              const online = Date.now() - new Date(visitor.last_seen_at).getTime() < 20000;
+              const online = currentTime - new Date(visitor.last_seen_at).getTime() < 20000;
               return (
                 <article key={visitor.session_id} className="rounded-xl border border-border bg-secondary/40 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
