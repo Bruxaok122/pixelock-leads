@@ -11,9 +11,16 @@ function analyticsEventType(eventName: string, converted: boolean) {
   if (eventName === "PixUnlocked") return "form_unlocked";
   if (eventName === "VideoPlay") return "video_played";
   if (eventName === "VideoPause") return "video_paused";
+  if (eventName === "PixFocused") return "pix_focused";
   if (eventName === "PixTyping") return "pix_typing";
+  if (eventName === "PixTypingStopped") return "pix_typing_stopped";
+  if (eventName === "PixBlurred") return "pix_blurred";
+  if (eventName === "WhatsAppFocused") return "whatsapp_focused";
   if (eventName === "WhatsAppTyping") return "whatsapp_typing";
+  if (eventName === "WhatsAppTypingStopped") return "whatsapp_typing_stopped";
+  if (eventName === "WhatsAppBlurred") return "whatsapp_blurred";
   if (eventName === "PageScroll") return "page_scrolled";
+  if (eventName === "BackIntercepted") return "back_intercepted";
   if (eventName === "PageExit") return "page_exit";
   if (eventName === "VideoProgress" || eventName === "Heartbeat") return "video_progress";
   return "page_view";

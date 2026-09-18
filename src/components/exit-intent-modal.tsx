@@ -6,31 +6,31 @@ import { useEffect, useState } from "react";
  */
 export function ExitIntentModal() {
   const [open, setOpen] = useState(false);
-  const [used, setUsed] = useState(false);
+  const [mouseUsed, setMouseUsed] = useState(false);
 
   useEffect(() => {
-    if (used) return;
-
-    const trigger = () => {
-      if (used) return;
+    const trigger = (source: "mouse" | "visibility" | "back") => {
+      if (source !== "back" && mouseUsed) return;
+      if (source !== "back") setMouseUsed(true);
       setOpen(true);
     };
 
     const handleMouseOut = (event: MouseEvent) => {
-      if (event.clientY <= 0 && !event.relatedTarget) trigger();
+      if (event.clientY <= 0 && !event.relatedTarget) trigger("mouse");
     };
 
     const handleVisibility = () => {
-      if (document.visibilityState === "hidden") trigger();
+      if (document.visibilityState === "hidden") trigger("visibility");
     };
 
     const handlePopState = () => {
-      trigger();
       try {
         window.history.pushState({ exitGuard: true }, "");
       } catch {
         /* noop */
       }
+      trigger("back");
+      window.dispatchEvent(new Event("ufhurd:back-intercepted"));
     };
 
     try {
@@ -48,7 +48,7 @@ export function ExitIntentModal() {
       document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [used]);
+  }, [mouseUsed]);
 
   if (!open) return null;
 
@@ -95,7 +95,6 @@ export function ExitIntentModal() {
         <button
           type="button"
           onClick={() => {
-            setUsed(true);
             setOpen(false);
           }}
           className="mt-8 w-full rounded-xl bg-[#2BA84A] px-6 py-4 text-[clamp(16px,3vw,26px)] font-semibold uppercase tracking-wide text-white shadow-[0_0_28px_rgba(43,168,74,0.45)] transition hover:brightness-110"

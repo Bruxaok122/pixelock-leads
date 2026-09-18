@@ -60,6 +60,8 @@ export function TrackingRuntime({
   const videoPlayingRef = useRef(videoPlaying);
   const lastTypingAtRef = useRef(0);
   const lastScrollAtRef = useRef(0);
+  const pixTypingTimerRef = useRef<number | null>(null);
+  const whatsappTypingTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     convertedRef.current = converted;
@@ -136,15 +138,52 @@ export function TrackingRuntime({
       if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) return;
 
       const now = Date.now();
-      if (now - lastTypingAtRef.current < 350) return;
-      lastTypingAtRef.current = now;
-
       if (target.id === "pix-key") {
-        sendImmediateEvent("PixTyping");
+        if (now - lastTypingAtRef.current >= 350) {
+          lastTypingAtRef.current = now;
+          sendImmediateEvent("PixTyping");
+        }
+        if (pixTypingTimerRef.current !== null) window.clearTimeout(pixTypingTimerRef.current);
+        pixTypingTimerRef.current = window.setTimeout(() => {
+          sendImmediateEvent("PixTypingStopped");
+          pixTypingTimerRef.current = null;
+        }, 2000);
       } else if (target.id === "whatsapp") {
-        sendImmediateEvent("WhatsAppTyping");
+        if (now - lastTypingAtRef.current >= 350) {
+          lastTypingAtRef.current = now;
+          sendImmediateEvent("WhatsAppTyping");
+        }
+        if (whatsappTypingTimerRef.current !== null) window.clearTimeout(whatsappTypingTimerRef.current);
+        whatsappTypingTimerRef.current = window.setTimeout(() => {
+          sendImmediateEvent("WhatsAppTypingStopped");
+          whatsappTypingTimerRef.current = null;
+        }, 2000);
       }
     };
+
+    const handleFocusIn = (event: FocusEvent) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      if (target.id === "pix-key") sendImmediateEvent("PixFocused");
+      if (target.id === "whatsapp") sendImmediateEvent("WhatsAppFocused");
+    };
+
+    const handleFocusOut = (event: FocusEvent) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      if (target.id === "pix-key") {
+        if (pixTypingTimerRef.current !== null) window.clearTimeout(pixTypingTimerRef.current);
+        pixTypingTimerRef.current = null;
+        sendImmediateEvent("PixBlurred");
+      }
+      if (target.id === "whatsapp") {
+        if (whatsappTypingTimerRef.current !== null) window.clearTimeout(whatsappTypingTimerRef.current);
+        whatsappTypingTimerRef.current = null;
+        sendImmediateEvent("WhatsAppBlurred");
+      }
+    };
+
+    const handleBackIntercepted = () => sendImmediateEvent("BackIntercepted");
 
     const handleScroll = () => {
       const now = Date.now();
@@ -155,11 +194,19 @@ export function TrackingRuntime({
 
     window.addEventListener("pagehide", handlePageExit);
     document.addEventListener("input", handleInput, true);
+    document.addEventListener("focusin", handleFocusIn, true);
+    document.addEventListener("focusout", handleFocusOut, true);
+    window.addEventListener("ufhurd:back-intercepted", handleBackIntercepted);
     window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
+      if (pixTypingTimerRef.current !== null) window.clearTimeout(pixTypingTimerRef.current);
+      if (whatsappTypingTimerRef.current !== null) window.clearTimeout(whatsappTypingTimerRef.current);
       window.removeEventListener("pagehide", handlePageExit);
       document.removeEventListener("input", handleInput, true);
+      document.removeEventListener("focusin", handleFocusIn, true);
+      document.removeEventListener("focusout", handleFocusOut, true);
+      window.removeEventListener("ufhurd:back-intercepted", handleBackIntercepted);
       window.removeEventListener("scroll", handleScroll);
     };
   }, [getSettings, sendEvent]);
