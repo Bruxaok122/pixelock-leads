@@ -8,6 +8,13 @@
       "when": 1789603964133,
       "tag": "0000_enable_analytics_realtime",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789752747440,
+      "tag": "0001_expand_analytics_event_types",
+      "breakpoints": true
     }
   ]
 }
