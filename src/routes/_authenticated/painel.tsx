@@ -2,12 +2,14 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { CalendarIcon, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { getTrackingSettings, listVisitorSessions, saveTrackingSettings } from "@/lib/tracking.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { listLeads, deleteLead, deleteAllLeads, type LeadRow } from "@/lib/leads.functions";
-import { formatDateTime, formatWhatsapp, whatsappLink } from "@/lib/lead-validation";
+import { formatDateTime, formatWhatsapp, getBrasiliaDateKey, whatsappLink } from "@/lib/lead-validation";
 import { useLeadChime } from "@/hooks/use-lead-chime";
 
 export const Route = createFileRoute("/_authenticated/painel")({
@@ -34,10 +36,24 @@ function PainelPage() {
   const { play, unlock } = useLeadChime();
   const [soundOn, setSoundOn] = useState(false);
   const [refreshingVisitors, setRefreshingVisitors] = useState(false);
+  const [todayDate, setTodayDate] = useState(() => getBrasiliaDateKey());
+  const [selectedDate, setSelectedDate] = useState(() => getBrasiliaDateKey());
   const knownCount = useRef<number | null>(null);
 
   useEffect(() => {
     setSoundOn(window.localStorage.getItem("painel-sound-enabled") === "true");
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const nextToday = getBrasiliaDateKey();
+      setTodayDate((currentToday) => {
+        if (currentToday === nextToday) return currentToday;
+        setSelectedDate(nextToday);
+        return nextToday;
+      });
+    }, 30000);
+    return () => window.clearInterval(timer);
   }, []);
 
   const [section, setSection] = useState<"dashboard" | "leads" | "pixel" | "visitors">("dashboard");
@@ -51,8 +67,8 @@ function PainelPage() {
   const visitorIsOnline = (visitor: (typeof visitors)[number]) => visitor.is_online;
 
   const { data: visitors = [], error: visitorsError } = useQuery({
-    queryKey: ["visitor-sessions"],
-    queryFn: () => fetchVisitors(),
+    queryKey: ["visitor-sessions", selectedDate],
+    queryFn: () => fetchVisitors({ data: { date: selectedDate } }),
     // Mantém o painel atualizado mesmo quando o realtime do Supabase
     // estiver indisponível no ambiente atual.
     refetchInterval: 1000,
@@ -87,8 +103,8 @@ function PainelPage() {
   }
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["leads"],
-    queryFn: () => fetchLeads(),
+    queryKey: ["leads", selectedDate],
+    queryFn: () => fetchLeads({ data: { date: selectedDate } }),
     refetchInterval: 20000,
   });
 
@@ -196,6 +212,44 @@ function PainelPage() {
           </button>
         </div>
       </header>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button type="button" variant="outline" className="justify-start text-left font-normal">
+              <CalendarIcon aria-hidden />
+              {selectedDate === todayDate
+                ? `Hoje, ${new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(
+                    new Date(`${selectedDate}T12:00:00Z`),
+                  )}`
+                : new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(
+                    new Date(`${selectedDate}T12:00:00Z`),
+                  )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={new Date(`${selectedDate}T12:00:00`)}
+              disabled={{ after: new Date(`${todayDate}T23:59:59`) }}
+              onSelect={(date) => {
+                if (!date) return;
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, "0");
+                const day = String(date.getDate()).padStart(2, "0");
+                setSelectedDate(`${year}-${month}-${day}`);
+              }}
+              className="pointer-events-auto p-3"
+            />
+          </PopoverContent>
+        </Popover>
+        {selectedDate !== todayDate ? (
+          <Button type="button" variant="ghost" onClick={() => setSelectedDate(todayDate)}>
+            Voltar para hoje
+          </Button>
+        ) : null}
+        <span className="text-xs text-muted-foreground">Dados do dia selecionado</span>
+      </div>
 
       {!soundOn ? (
         <p className="mt-3 rounded-lg border border-border bg-secondary/60 px-3 py-2 text-xs text-muted-foreground">

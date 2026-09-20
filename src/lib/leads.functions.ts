@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { leadInputSchema, isValidWhatsapp } from "@/lib/lead-validation";
+import { getBrasiliaDateKey, getBrasiliaDayBounds, leadInputSchema, isValidWhatsapp } from "@/lib/lead-validation";
 
 export type LeadRow = {
   id: string;
@@ -84,16 +84,26 @@ export const submitLead = createServerFn({ method: "POST" })
 
 export const listLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: unknown) => {
+    const date = typeof input === "object" && input !== null && "date" in input ? (input as { date?: unknown }).date : undefined;
+    if (date !== undefined && typeof date !== "string") throw new Error("Data inválida.");
+    const dateKey = date ?? getBrasiliaDateKey();
+    getBrasiliaDayBounds(dateKey);
+    return { date: dateKey };
+  })
+  .handler(async ({ data: input, context }) => {
     const { data: isAdmin } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",
     });
     if (!isAdmin) throw new Error("Acesso restrito ao administrador.");
 
+    const bounds = getBrasiliaDayBounds(input.date);
     const { data, error } = await context.supabase
       .from("leads")
       .select("id, pix_key, whatsapp, ip_address, user_agent, status, created_at")
+      .gte("created_at", bounds.from)
+      .lt("created_at", bounds.to)
       .order("created_at", { ascending: false })
       .limit(500);
 

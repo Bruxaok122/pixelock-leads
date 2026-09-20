@@ -53,3 +53,35 @@ export function formatDateTime(iso: string): string {
     hourCycle: "h23",
   }).format(instant);
 }
+
+const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+export function getBrasiliaDateKey(date = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values["year"]}-${values["month"]}-${values["day"]}`;
+}
+
+export function getBrasiliaDayBounds(dateKey: string): { from: string; to: string } {
+  if (!DATE_KEY_PATTERN.test(dateKey)) throw new Error("Data inválida.");
+
+  const [year, month, day] = dateKey.split("-").map(Number);
+  if (!year || !month || !day) throw new Error("Data inválida.");
+
+  const start = new Date(Date.UTC(year, month - 1, day, 3));
+  const next = new Date(Date.UTC(year, month - 1, day + 1, 3));
+  if (
+    start.getUTCFullYear() !== year ||
+    start.getUTCMonth() !== month - 1 ||
+    start.getUTCDate() !== day
+  ) {
+    throw new Error("Data inválida.");
+  }
+
+  return { from: start.toISOString(), to: next.toISOString() };
+}
