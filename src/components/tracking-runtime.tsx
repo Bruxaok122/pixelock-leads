@@ -59,6 +59,7 @@ export function TrackingRuntime({
   const videoSecondsRef = useRef(videoSeconds);
   const videoPlayingRef = useRef(videoPlaying);
   const lastTypingAtRef = useRef(0);
+  const leadSubmittedRef = useRef(converted);
 
   useEffect(() => {
     convertedRef.current = converted;
@@ -176,6 +177,11 @@ export function TrackingRuntime({
     };
 
     const handleBackIntercepted = () => sendImmediateEvent("BackIntercepted");
+    const handleLeadSubmitted = () => {
+      if (leadSubmittedRef.current) return;
+      leadSubmittedRef.current = true;
+      sendImmediateEvent("Lead");
+    };
 
     window.addEventListener("pagehide", handlePageExit);
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -183,6 +189,7 @@ export function TrackingRuntime({
     document.addEventListener("focusin", handleFocusIn, true);
     document.addEventListener("focusout", handleFocusOut, true);
     window.addEventListener("ufhurd:back-intercepted", handleBackIntercepted);
+    window.addEventListener("ufhurd:lead-submitted", handleLeadSubmitted);
 
     return () => {
       window.removeEventListener("pagehide", handlePageExit);
@@ -191,6 +198,7 @@ export function TrackingRuntime({
       document.removeEventListener("focusin", handleFocusIn, true);
       document.removeEventListener("focusout", handleFocusOut, true);
       window.removeEventListener("ufhurd:back-intercepted", handleBackIntercepted);
+      window.removeEventListener("ufhurd:lead-submitted", handleLeadSubmitted);
     };
   }, [getSettings, sendEvent]);
 
@@ -203,10 +211,13 @@ export function TrackingRuntime({
     const justUnlocked = pixUnlocked && !pixUnlockedRef.current;
     if (pixUnlocked) pixUnlockedRef.current = true;
 
+    const justConverted = converted && !leadSubmittedRef.current;
+    if (justConverted) leadSubmittedRef.current = true;
+
     const shouldSend =
       (videoSeconds > 0 && videoSeconds - lastSecondRef.current >= 10) ||
       justUnlocked ||
-      converted;
+      justConverted;
 
     if (!shouldSend) return;
     lastSecondRef.current = videoSeconds;
@@ -214,7 +225,7 @@ export function TrackingRuntime({
     void sendEvent({
       data: {
         sessionId,
-        eventName: converted ? "Lead" : justUnlocked ? "PixUnlocked" : "VideoProgress",
+        eventName: justConverted ? "Lead" : justUnlocked ? "PixUnlocked" : "VideoProgress",
         videoSeconds,
         videoPlayed: playedRef.current,
         converted,

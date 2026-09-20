@@ -34,6 +34,7 @@ export interface VisitorSession {
   video_seconds: number;
   converted: boolean;
   last_event: string;
+  is_online: boolean;
 }
 
 function isValidMetaPixelId(value: string) {
@@ -247,14 +248,26 @@ export const listVisitorSessions = createServerFn({ method: "GET" })
       }
     }
 
-    return (data ?? []).map((session): VisitorSession => ({
-      session_id: session.id,
-      path: session.page_path,
-      page_viewed_at: session.started_at,
-      last_seen_at: session.last_seen_at,
-      video_played: session.max_video_seconds > 0,
-      video_seconds: session.max_video_seconds,
-      converted: session.lead_id !== null || convertedSessionIds.has(session.id),
-      last_event: latestEventBySession.get(session.id) ?? "page_view",
-    }));
+    const serverNow = Date.now();
+
+    return (data ?? []).map((session): VisitorSession => {
+      const lastEvent = latestEventBySession.get(session.id) ?? "page_view";
+      const lastSeenAt = new Date(session.last_seen_at).getTime();
+
+      return {
+        session_id: session.id,
+        path: session.page_path,
+        page_viewed_at: session.started_at,
+        last_seen_at: session.last_seen_at,
+        video_played: session.max_video_seconds > 0,
+        video_seconds: session.max_video_seconds,
+        converted: session.lead_id !== null || convertedSessionIds.has(session.id),
+        last_event: lastEvent,
+        is_online:
+          lastEvent !== "page_exit" &&
+          Number.isFinite(lastSeenAt) &&
+          serverNow - lastSeenAt >= 0 &&
+          serverNow - lastSeenAt < 10000,
+      };
+    });
   });

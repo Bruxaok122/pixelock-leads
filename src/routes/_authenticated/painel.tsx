@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getTrackingSettings, listVisitorSessions, saveTrackingSettings } from "@/lib/tracking.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,17 +33,13 @@ function PainelPage() {
   const [wiping, setWiping] = useState(false);
   const { play, unlock } = useLeadChime();
   const [soundOn, setSoundOn] = useState(false);
-  const [presenceNow, setPresenceNow] = useState(() => Date.now());
+  const [refreshingVisitors, setRefreshingVisitors] = useState(false);
   const knownCount = useRef<number | null>(null);
 
   useEffect(() => {
     setSoundOn(window.localStorage.getItem("painel-sound-enabled") === "true");
   }, []);
 
-  useEffect(() => {
-    const timer = window.setInterval(() => setPresenceNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
   const [section, setSection] = useState<"dashboard" | "leads" | "pixel" | "visitors">("dashboard");
   const [pixelId, setPixelId] = useState("");
   const [pixelEnabled, setPixelEnabled] = useState(false);
@@ -51,8 +48,7 @@ function PainelPage() {
   const fetchTrackingSettings = useServerFn(getTrackingSettings);
   const updateTrackingSettings = useServerFn(saveTrackingSettings);
   const fetchVisitors = useServerFn(listVisitorSessions);
-  const visitorIsOnline = (visitor: (typeof visitors)[number]) =>
-    visitor.last_event !== "page_exit" && presenceNow - new Date(visitor.last_seen_at).getTime() < 10000;
+  const visitorIsOnline = (visitor: (typeof visitors)[number]) => visitor.is_online;
 
   const { data: visitors = [], error: visitorsError } = useQuery({
     queryKey: ["visitor-sessions"],
@@ -78,6 +74,15 @@ function PainelPage() {
       setPixelMessage("Configuração salva. O rastreamento da página /ufhurd será atualizado automaticamente.");
     } catch (saveError) {
       setPixelMessage((saveError as Error).message);
+    }
+  }
+
+  async function handleRefreshVisitors() {
+    setRefreshingVisitors(true);
+    try {
+      await queryClient.refetchQueries({ queryKey: ["visitor-sessions"], type: "active" });
+    } finally {
+      setRefreshingVisitors(false);
     }
   }
 
@@ -338,10 +343,23 @@ function PainelPage() {
 
       {section === "visitors" ? (
         <section className="surface-card mt-6 rounded-2xl p-6">
-          <h2 className="text-xl font-extrabold">Visitantes em /ufhurd</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-             A presença e a última ação são atualizadas automaticamente em tempo real.
-          </p>
+           <div className="flex flex-wrap items-start justify-between gap-3">
+             <div>
+               <h2 className="text-xl font-extrabold">Visitantes em /ufhurd</h2>
+               <p className="mt-1 text-sm text-muted-foreground">
+                 A presença e a última ação são atualizadas automaticamente em tempo real.
+               </p>
+             </div>
+             <Button
+               type="button"
+               variant="outline"
+               disabled={refreshingVisitors}
+               onClick={() => void handleRefreshVisitors()}
+             >
+               <RefreshCw className={refreshingVisitors ? "animate-spin" : undefined} aria-hidden />
+               {refreshingVisitors ? "Atualizando" : "Atualizar status"}
+             </Button>
+           </div>
 
           <div className="mt-5 grid gap-3">
             {visitorsError ? (
@@ -394,8 +412,8 @@ function PainelPage() {
                                               ? "↗️ Saiu do campo do WhatsApp"
                                                : visitor.last_event === "back_intercepted"
                                                  ? "⚠️ Clicou em voltar — popup exibido"
-                                    : visitor.last_event === "lead_submitted"
-                                      ? "✅ Enviou os dados"
+                                     : visitor.last_event === "lead_submitted"
+                                       ? "✅ Enviou a chave Pix"
                                       : visitor.video_played
                                         ? "▶ Assistindo o vídeo"
                                         : "⌛ Ainda não deu play"}

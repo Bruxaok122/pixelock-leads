@@ -8,3 +8,4 @@
   - [x] Manter a última ação até uma nova interação e atualizar online/offline automaticamente
   - [x] Marcar saída como offline em vermelho, usar horário de Brasília e remover status de rolagem
   - [x] Registrar tentativa de retorno após exibir o popup de saída
+  - [x] Corrigir envio da chave Pix, presença offline, horário de Brasília e atualização manual
