@@ -56,7 +56,13 @@ function PainelPage() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const [section, setSection] = useState<"dashboard" | "leads" | "pixel" | "visitors">("dashboard");
+  const [section, setSection] = useState<"dashboard" | "leads" | "pixel" | "visitors" | "logs">("dashboard");
+  const [logsUnlocked, setLogsUnlocked] = useState(false);
+  const [logPassword, setLogPassword] = useState("");
+  const [logMessage, setLogMessage] = useState<string | null>(null);
+  const fetchAuditLogs = useServerFn(listAuditLogs);
+  const unlockLogMonitor = useServerFn(authenticateLogMonitor);
+  const sendAuditLog = useServerFn(recordAuditLog);
   const [pixelId, setPixelId] = useState("");
   const [pixelEnabled, setPixelEnabled] = useState(false);
   const [trackingEvents, setTrackingEvents] = useState(["PageView", "ViewContent", "InitiateCheckout", "Lead"]);
@@ -66,6 +72,14 @@ function PainelPage() {
   const fetchVisitors = useServerFn(listVisitorSessions);
   const visitorIsOnline = (visitor: (typeof visitors)[number]) => visitor.is_online;
 
+  const { data: auditLogs = [], error: auditLogsError } = useQuery({
+    queryKey: ["panel-audit-logs"],
+    queryFn: () => fetchAuditLogs({ data: { password: logPassword } }),
+    enabled: logsUnlocked,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
+  });
+
   const { data: visitors = [], error: visitorsError } = useQuery({
     queryKey: ["visitor-sessions", selectedDate],
     queryFn: () => fetchVisitors({ data: { date: selectedDate } }),
@@ -74,6 +88,38 @@ function PainelPage() {
     refetchInterval: 1000,
     refetchIntervalInBackground: true,
   });
+
+  useEffect(() => {
+    if (!logsUnlocked) return;
+
+    const handlePanelClick = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+
+      const element = target.closest("button, a, input, [role='button']");
+      if (!(element instanceof HTMLElement)) return;
+
+      const label =
+        element.getAttribute("aria-label") ||
+        element.getAttribute("name") ||
+        element.id ||
+        element.textContent?.trim().slice(0, 120) ||
+        element.tagName.toLowerCase();
+
+      void sendAuditLog({
+        data: {
+          action: "panel_interaction",
+          target: label,
+        },
+      });
+    };
+
+    document.addEventListener("click", handlePanelClick, true);
+
+    return () => {
+      document.removeEventListener("click", handlePanelClick, true);
+    };
+  }, [logsUnlocked, sendAuditLog]);
 
   useEffect(() => {
     void fetchTrackingSettings().then((settings) => {
@@ -169,6 +215,7 @@ function PainelPage() {
             ["leads", "Leads recebidos"],
             ["pixel", "Pixel e conversões"],
             ["visitors", "Visitantes online"],
+            ["logs", "Monitoramento de logs"],
           ].map(([value, label]) => (
             <button
               key={value}
@@ -259,6 +306,104 @@ function PainelPage() {
 
       {isLoading ? <p className="mt-8 text-sm text-muted-foreground">Carregando...</p> : null}
       {error ? <p className="mt-8 text-sm text-destructive">{(error as Error).message}</p> : null}
+
+      {section === "logs" ? (
+        <section className="surface-card mt-6 rounded-2xl p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-extrabold">Monitoramento de logs</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Consulte os acessos e as interações realizadas no painel administrativo.
+              </p>
+            </div>
+            {logsUnlocked ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setLogsUnlocked(false);
+                  setLogPassword("");
+                  setLogMessage(null);
+                }}
+              >
+                Bloquear monitoramento
+              </Button>
+            ) : null}
+          </div>
+
+          {!logsUnlocked ? (
+            <form
+              className="mt-6 max-w-sm space-y-3"
+              onSubmit={async (event) => {
+                event.preventDefault();
+                setLogMessage(null);
+
+                try {
+                  await unlockLogMonitor({ data: { password: logPassword } });
+                  setLogsUnlocked(true);
+                  setLogMessage("Monitoramento desbloqueado.");
+                } catch (error) {
+                  setLogMessage((error as Error).message);
+                }
+              }}
+            >
+              <label className="block text-sm font-bold" htmlFor="log-monitor-password">
+                Senha do monitoramento
+              </label>
+              <Input
+                id="log-monitor-password"
+                type="password"
+                value={logPassword}
+                onChange={(event) => setLogPassword(event.target.value)}
+                autoComplete="off"
+                placeholder="Digite a senha"
+              />
+              <Button type="submit">Entrar no monitoramento</Button>
+              {logMessage ? <p className="text-sm text-destructive">{logMessage}</p> : null}
+            </form>
+          ) : (
+            <div className="mt-6">
+              {auditLogsError ? (
+                <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  Não foi possível carregar os logs.
+                </p>
+              ) : null}
+
+              {!auditLogsError && auditLogs.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhuma atividade registrada ainda.</p>
+              ) : null}
+
+              <div className="grid gap-2">
+                {auditLogs.map((log) => (
+                  <article
+                    key={log.id}
+                    className="rounded-xl border border-border bg-secondary/40 px-4 py-3"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-bold">
+                        {log.action === "log_monitor_login"
+                          ? "Entrou no monitoramento"
+                          : "Interagiu com o painel"}
+                      </p>
+                      <time className="text-xs text-muted-foreground">
+                        {formatDateTime(log.created_at)}
+                      </time>
+                    </div>
+                    {log.target ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Elemento: {log.target}
+                      </p>
+                    ) : null}
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Usuário: {log.user_id ?? "desconhecido"}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      ) : null}
 
       {section === "dashboard" ? (
         <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
