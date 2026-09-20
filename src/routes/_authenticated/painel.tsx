@@ -32,10 +32,16 @@ function PainelPage() {
   const [wiping, setWiping] = useState(false);
   const { play, unlock } = useLeadChime();
   const [soundOn, setSoundOn] = useState(false);
+  const [presenceNow, setPresenceNow] = useState(() => Date.now());
   const knownCount = useRef<number | null>(null);
 
   useEffect(() => {
     setSoundOn(window.localStorage.getItem("painel-sound-enabled") === "true");
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setPresenceNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
   }, []);
   const [section, setSection] = useState<"dashboard" | "leads" | "pixel" | "visitors">("dashboard");
   const [pixelId, setPixelId] = useState("");
@@ -51,7 +57,7 @@ function PainelPage() {
     queryFn: () => fetchVisitors(),
     // Mantém o painel atualizado mesmo quando o realtime do Supabase
     // estiver indisponível no ambiente atual.
-    refetchInterval: 3000,
+    refetchInterval: 1000,
     refetchIntervalInBackground: true,
   });
 
@@ -89,6 +95,9 @@ function PainelPage() {
         play();
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "analytics_sessions" }, () => {
+        void queryClient.invalidateQueries({ queryKey: ["visitor-sessions"] });
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "analytics_events" }, () => {
         void queryClient.invalidateQueries({ queryKey: ["visitor-sessions"] });
       })
       .subscribe();
@@ -205,7 +214,7 @@ function PainelPage() {
           <article className="surface-card rounded-2xl p-5">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Online agora</p>
             <p className="mt-2 text-3xl font-extrabold">
-              {visitors.filter((visitor) => Date.now() - new Date(visitor.last_seen_at).getTime() < 30000).length}
+               {visitors.filter((visitor) => presenceNow - new Date(visitor.last_seen_at).getTime() < 10000).length}
             </p>
           </article>
           <article className="surface-card rounded-2xl p-5">
@@ -329,7 +338,7 @@ function PainelPage() {
         <section className="surface-card mt-6 rounded-2xl p-6">
           <h2 className="text-xl font-extrabold">Visitantes em /ufhurd</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Um visitante é considerado online quando enviou atividade nos últimos 30 segundos.
+             A presença e a última ação são atualizadas automaticamente em tempo real.
           </p>
 
           <div className="mt-5 grid gap-3">
@@ -342,9 +351,9 @@ function PainelPage() {
               <p className="text-sm text-muted-foreground">Nenhum visitante registrado ainda.</p>
             ) : null}
             {visitors.map((visitor) => {
-              // O heartbeat é enviado a cada 15s. Com 25s, fechamentos de
-              // navegador e abas encerradas ficam offline rapidamente.
-              const online = Date.now() - new Date(visitor.last_seen_at).getTime() < 20000;
+              // O heartbeat é enviado a cada 5s; sem nova presença, a sessão
+              // muda para offline automaticamente após 10s.
+              const online = presenceNow - new Date(visitor.last_seen_at).getTime() < 10000;
               return (
                 <article key={visitor.session_id} className="rounded-xl border border-border bg-secondary/40 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -368,7 +377,7 @@ function PainelPage() {
                               : visitor.last_event === "pix_focused"
                                 ? "👆 Clicou no campo da chave Pix"
                                 : visitor.last_event === "pix_typing"
-                                  ? "✍️ Digitando..."
+                                   ? "✍️ Digitando chave"
                                   : visitor.last_event === "pix_typing_stopped"
                                     ? "⌨️ Parou de digitar a chave Pix"
                                     : visitor.last_event === "pix_blurred"
