@@ -59,7 +59,6 @@ export function TrackingRuntime({
   const videoSecondsRef = useRef(videoSeconds);
   const videoPlayingRef = useRef(videoPlaying);
   const lastTypingAtRef = useRef(0);
-  const lastScrollAtRef = useRef(0);
 
   useEffect(() => {
     convertedRef.current = converted;
@@ -178,20 +177,12 @@ export function TrackingRuntime({
 
     const handleBackIntercepted = () => sendImmediateEvent("BackIntercepted");
 
-    const handleScroll = () => {
-      const now = Date.now();
-      if (now - lastScrollAtRef.current < 500) return;
-      lastScrollAtRef.current = now;
-      sendImmediateEvent("PageScroll");
-    };
-
     window.addEventListener("pagehide", handlePageExit);
     document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("input", handleInput, true);
     document.addEventListener("focusin", handleFocusIn, true);
     document.addEventListener("focusout", handleFocusOut, true);
     window.addEventListener("ufhurd:back-intercepted", handleBackIntercepted);
-    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
       window.removeEventListener("pagehide", handlePageExit);
@@ -200,7 +191,6 @@ export function TrackingRuntime({
       document.removeEventListener("focusin", handleFocusIn, true);
       document.removeEventListener("focusout", handleFocusOut, true);
       window.removeEventListener("ufhurd:back-intercepted", handleBackIntercepted);
-      window.removeEventListener("scroll", handleScroll);
     };
   }, [getSettings, sendEvent]);
 
