@@ -15,6 +15,13 @@
       "when": 1789752747440,
       "tag": "0001_expand_analytics_event_types",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789917154594,
+      "tag": "0002_enable_analytics_events_realtime",
+      "breakpoints": true
     }
   ]
 }
