@@ -116,6 +116,15 @@ export function TrackingRuntime({
       });
     };
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        handlePageExit();
+        return;
+      }
+
+      sendImmediateEvent("Heartbeat");
+    };
+
     const sendImmediateEvent = (eventName: string) => {
       const currentSessionId = sessionIdRef.current;
       if (!currentSessionId) return;
@@ -177,6 +186,7 @@ export function TrackingRuntime({
     };
 
     window.addEventListener("pagehide", handlePageExit);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("input", handleInput, true);
     document.addEventListener("focusin", handleFocusIn, true);
     document.addEventListener("focusout", handleFocusOut, true);
@@ -185,6 +195,7 @@ export function TrackingRuntime({
 
     return () => {
       window.removeEventListener("pagehide", handlePageExit);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener("input", handleInput, true);
       document.removeEventListener("focusin", handleFocusIn, true);
       document.removeEventListener("focusout", handleFocusOut, true);

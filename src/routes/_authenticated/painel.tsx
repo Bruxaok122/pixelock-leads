@@ -97,6 +97,9 @@ function PainelPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "analytics_sessions" }, () => {
         void queryClient.invalidateQueries({ queryKey: ["visitor-sessions"] });
       })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "analytics_events" }, () => {
+        void queryClient.invalidateQueries({ queryKey: ["visitor-sessions"] });
+      })
       .subscribe();
 
     return () => {
