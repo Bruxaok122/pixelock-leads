@@ -49,7 +49,7 @@ function PainelPage() {
       const nextToday = getBrasiliaDateKey();
       setTodayDate((currentToday) => {
         if (currentToday === nextToday) return currentToday;
-        setSelectedDate((currentDate) => (currentDate === currentToday ? nextToday : currentDate));
+        setSelectedDate(nextToday);
         return nextToday;
       });
     }, 30000);
@@ -219,7 +219,9 @@ function PainelPage() {
             <Button type="button" variant="outline" className="justify-start text-left font-normal">
               <CalendarIcon aria-hidden />
               {selectedDate === todayDate
-                ? "Hoje"
+                ? `Hoje, ${new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(
+                    new Date(`${selectedDate}T12:00:00Z`),
+                  )}`
                 : new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(
                     new Date(`${selectedDate}T12:00:00Z`),
                   )}
