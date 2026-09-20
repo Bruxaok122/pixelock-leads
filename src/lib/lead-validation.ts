@@ -42,15 +42,14 @@ export function formatDateTime(iso: string): string {
   const instant = new Date(iso);
   if (Number.isNaN(instant.getTime())) return "Horário indisponível";
 
-  // Brasília permanece em UTC-3. O deslocamento explícito evita que o
-  // ambiente do navegador ou servidor aplique o fuso local incorretamente.
-  const brasilia = new Date(instant.getTime() - 3 * 60 * 60 * 1000);
-  return brasilia.toLocaleString("pt-BR", {
-    timeZone: "UTC",
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  });
+    second: "2-digit",
+    hourCycle: "h23",
+  }).format(instant);
 }

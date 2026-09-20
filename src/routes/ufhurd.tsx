@@ -123,6 +123,7 @@ function Index() {
     const result = await send({ data: { pixKey: pixKey.trim(), whatsapp: whatsapp.trim() } });
     setSending(false);
     if (result.ok) {
+      window.dispatchEvent(new Event("ufhurd:lead-submitted"));
       setStage("validated");
       window.setTimeout(() => setStage("reserved"), 1600);
       return;
