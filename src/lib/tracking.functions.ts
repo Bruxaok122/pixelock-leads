@@ -7,7 +7,9 @@ const META_PIXEL_ID_PATTERN = /^\d{5,20}$/;
 const META_EVENTS = ["PageView", "ViewContent", "InitiateCheckout", "Lead"] as const;
 
 function analyticsEventType(eventName: string, converted: boolean) {
-  if (converted || eventName === "Lead") return "lead_submitted";
+  // O estado convertido acompanha a sessão, mas não pode transformar ações
+  // posteriores (como saída ou pausa) em um novo envio de lead.
+  if (eventName === "Lead") return "lead_submitted";
   if (eventName === "PixUnlocked") return "form_unlocked";
   if (eventName === "VideoPlay") return "video_played";
   if (eventName === "VideoPause") return "video_paused";
