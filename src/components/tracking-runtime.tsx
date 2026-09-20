@@ -60,8 +60,6 @@ export function TrackingRuntime({
   const videoPlayingRef = useRef(videoPlaying);
   const lastTypingAtRef = useRef(0);
   const lastScrollAtRef = useRef(0);
-  const pixTypingTimerRef = useRef<number | null>(null);
-  const whatsappTypingTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     convertedRef.current = converted;
@@ -143,21 +141,11 @@ export function TrackingRuntime({
           lastTypingAtRef.current = now;
           sendImmediateEvent("PixTyping");
         }
-        if (pixTypingTimerRef.current !== null) window.clearTimeout(pixTypingTimerRef.current);
-        pixTypingTimerRef.current = window.setTimeout(() => {
-          sendImmediateEvent("PixTypingStopped");
-          pixTypingTimerRef.current = null;
-        }, 2000);
       } else if (target.id === "whatsapp") {
         if (now - lastTypingAtRef.current >= 350) {
           lastTypingAtRef.current = now;
           sendImmediateEvent("WhatsAppTyping");
         }
-        if (whatsappTypingTimerRef.current !== null) window.clearTimeout(whatsappTypingTimerRef.current);
-        whatsappTypingTimerRef.current = window.setTimeout(() => {
-          sendImmediateEvent("WhatsAppTypingStopped");
-          whatsappTypingTimerRef.current = null;
-        }, 2000);
       }
     };
 
@@ -172,13 +160,9 @@ export function TrackingRuntime({
       const target = event.target;
       if (!(target instanceof HTMLInputElement)) return;
       if (target.id === "pix-key") {
-        if (pixTypingTimerRef.current !== null) window.clearTimeout(pixTypingTimerRef.current);
-        pixTypingTimerRef.current = null;
         sendImmediateEvent("PixBlurred");
       }
       if (target.id === "whatsapp") {
-        if (whatsappTypingTimerRef.current !== null) window.clearTimeout(whatsappTypingTimerRef.current);
-        whatsappTypingTimerRef.current = null;
         sendImmediateEvent("WhatsAppBlurred");
       }
     };
@@ -200,8 +184,6 @@ export function TrackingRuntime({
     window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
-      if (pixTypingTimerRef.current !== null) window.clearTimeout(pixTypingTimerRef.current);
-      if (whatsappTypingTimerRef.current !== null) window.clearTimeout(whatsappTypingTimerRef.current);
       window.removeEventListener("pagehide", handlePageExit);
       document.removeEventListener("input", handleInput, true);
       document.removeEventListener("focusin", handleFocusIn, true);
@@ -266,13 +248,13 @@ export function TrackingRuntime({
       void sendEvent({
         data: {
           sessionId,
-          eventName: playedRef.current ? "Heartbeat" : "PageView",
+          eventName: "Heartbeat",
           videoSeconds: videoSecondsRef.current,
           videoPlayed: playedRef.current,
           converted: convertedRef.current,
         },
       });
-    }, 15000);
+    }, 5000);
 
     return () => window.clearInterval(interval);
   }, [sendEvent]);

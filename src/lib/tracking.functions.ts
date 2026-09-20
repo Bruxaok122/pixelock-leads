@@ -237,9 +237,12 @@ export const listVisitorSessions = createServerFn({ method: "GET" })
 
     const latestEventBySession = new Map<string, string>();
     const convertedSessionIds = new Set<string>();
+    const passiveEventTypes = new Set(["video_progress"]);
 
     for (const event of sessionEvents ?? []) {
-      if (!latestEventBySession.has(event.session_id)) {
+      // Heartbeats e progresso mantêm a presença online, mas não substituem
+      // a última ação explícita feita pelo visitante.
+      if (!passiveEventTypes.has(event.event_type) && !latestEventBySession.has(event.session_id)) {
         latestEventBySession.set(event.session_id, event.event_type);
       }
       if (event.event_type === "lead_submitted") {
