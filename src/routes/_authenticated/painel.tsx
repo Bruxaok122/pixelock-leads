@@ -51,6 +51,8 @@ function PainelPage() {
   const fetchTrackingSettings = useServerFn(getTrackingSettings);
   const updateTrackingSettings = useServerFn(saveTrackingSettings);
   const fetchVisitors = useServerFn(listVisitorSessions);
+  const visitorIsOnline = (visitor: (typeof visitors)[number]) =>
+    visitor.last_event !== "page_exit" && presenceNow - new Date(visitor.last_seen_at).getTime() < 10000;
 
   const { data: visitors = [], error: visitorsError } = useQuery({
     queryKey: ["visitor-sessions"],
@@ -214,7 +216,7 @@ function PainelPage() {
           <article className="surface-card rounded-2xl p-5">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Online agora</p>
             <p className="mt-2 text-3xl font-extrabold">
-               {visitors.filter((visitor) => presenceNow - new Date(visitor.last_seen_at).getTime() < 10000).length}
+               {visitors.filter(visitorIsOnline).length}
             </p>
           </article>
           <article className="surface-card rounded-2xl p-5">
@@ -353,11 +355,11 @@ function PainelPage() {
             {visitors.map((visitor) => {
               // O heartbeat é enviado a cada 5s; sem nova presença, a sessão
               // muda para offline automaticamente após 10s.
-              const online = presenceNow - new Date(visitor.last_seen_at).getTime() < 10000;
+              const online = visitorIsOnline(visitor);
               return (
                 <article key={visitor.session_id} className="rounded-xl border border-border bg-secondary/40 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className={`text-sm font-bold ${online ? "text-success" : "text-muted-foreground"}`}>
+                    <span className={`text-sm font-bold ${online ? "text-success" : "text-destructive"}`}>
                       {online ? "● Online" : "○ Offline"}
                     </span>
                     <span className="text-xs text-muted-foreground">
@@ -390,10 +392,8 @@ function PainelPage() {
                                             ? "⌨️ Parou de digitar o WhatsApp"
                                             : visitor.last_event === "whatsapp_blurred"
                                               ? "↗️ Saiu do campo do WhatsApp"
-                                              : visitor.last_event === "back_intercepted"
-                                                ? "⚠️ Clicou em voltar — popup exibido"
-                                  : visitor.last_event === "page_scrolled"
-                                    ? "↕️ Rolando a página"
+                                               : visitor.last_event === "back_intercepted"
+                                                 ? "⚠️ Clicou em voltar — popup exibido"
                                     : visitor.last_event === "lead_submitted"
                                       ? "✅ Enviou os dados"
                                       : visitor.video_played

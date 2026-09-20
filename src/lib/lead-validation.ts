@@ -39,8 +39,14 @@ export function whatsappLink(value: string): string {
 }
 
 export function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString("pt-BR", {
-    timeZone: "America/Sao_Paulo",
+  const instant = new Date(iso);
+  if (Number.isNaN(instant.getTime())) return "Horário indisponível";
+
+  // Brasília permanece em UTC-3. O deslocamento explícito evita que o
+  // ambiente do navegador ou servidor aplique o fuso local incorretamente.
+  const brasilia = new Date(instant.getTime() - 3 * 60 * 60 * 1000);
+  return brasilia.toLocaleString("pt-BR", {
+    timeZone: "UTC",
     day: "2-digit",
     month: "2-digit",
     year: "numeric",

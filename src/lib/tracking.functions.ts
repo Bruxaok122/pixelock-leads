@@ -19,7 +19,6 @@ function analyticsEventType(eventName: string, converted: boolean) {
   if (eventName === "WhatsAppTyping") return "whatsapp_typing";
   if (eventName === "WhatsAppTypingStopped") return "whatsapp_typing_stopped";
   if (eventName === "WhatsAppBlurred") return "whatsapp_blurred";
-  if (eventName === "PageScroll") return "page_scrolled";
   if (eventName === "BackIntercepted") return "back_intercepted";
   if (eventName === "PageExit") return "page_exit";
   if (eventName === "VideoProgress" || eventName === "Heartbeat") return "video_progress";
@@ -171,9 +170,7 @@ export const trackVisitorEvent = createServerFn({ method: "POST" })
     const userAgent = getRequestHeader("user-agent") ?? null;
     const ipAddress = getIpAddress();
 
-    const now = new Date().toISOString();
-    // Eventos de saída tornam a sessão imediatamente offline no painel.
-    const lastSeenAt = data.eventName === "PageExit" ? new Date(Date.now() - 60000).toISOString() : now;
+    const lastSeenAt = new Date().toISOString();
 
     const { data: existingSession, error: existingSessionError } = await supabaseAdmin
       .from("analytics_sessions")
