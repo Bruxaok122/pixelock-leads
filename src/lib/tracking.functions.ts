@@ -6,7 +6,7 @@ const TRACKED_PATH = "/ufhurd";
 const META_PIXEL_ID_PATTERN = /^\d{5,20}$/;
 const META_EVENTS = ["PageView", "ViewContent", "InitiateCheckout", "Lead"] as const;
 
-function analyticsEventType(eventName: string, converted: boolean) {
+function analyticsEventType(eventName: string) {
   // O estado convertido acompanha a sessão, mas não pode transformar ações
   // posteriores (como saída ou pausa) em um novo envio de lead.
   if (eventName === "Lead") return "lead_submitted";
@@ -198,7 +198,7 @@ export const trackVisitorEvent = createServerFn({ method: "POST" })
 
     const { error: eventError } = await supabaseAdmin.from("analytics_events").insert({
       session_id: data.sessionId,
-      event_type: analyticsEventType(data.eventName, data.converted),
+       event_type: analyticsEventType(data.eventName),
       numeric_value: data.videoSeconds,
       target_key: ipAddress === "0.0.0.0" ? null : "tracked",
     });
