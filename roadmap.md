@@ -9,3 +9,4 @@
   - [x] Marcar saída como offline em vermelho, usar horário de Brasília e remover status de rolagem
   - [x] Registrar tentativa de retorno após exibir o popup de saída
   - [x] Corrigir envio da chave Pix, presença offline, horário de Brasília e atualização manual
+- [x] Adicionar filtro diário com calendário e virada automática no horário de Brasília

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getBrasiliaDateKey, getBrasiliaDayBounds } from "@/lib/lead-validation";
 
 const TRACKED_PATH = "/ufhurd";
 const META_PIXEL_ID_PATTERN = /^\d{5,20}$/;
@@ -209,7 +210,14 @@ export const trackVisitorEvent = createServerFn({ method: "POST" })
 
 export const listVisitorSessions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: unknown) => {
+    const date = typeof input === "object" && input !== null && "date" in input ? (input as { date?: unknown }).date : undefined;
+    if (date !== undefined && typeof date !== "string") throw new Error("Data inválida.");
+    const dateKey = date ?? getBrasiliaDateKey();
+    getBrasiliaDayBounds(dateKey);
+    return { date: dateKey };
+  })
+  .handler(async ({ data: input, context }) => {
     const { data: isAdmin } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",
@@ -218,16 +226,21 @@ export const listVisitorSessions = createServerFn({ method: "GET" })
     if (!isAdmin) throw new Error("Acesso restrito ao administrador.");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const bounds = getBrasiliaDayBounds(input.date);
     const [{ data, error }, { data: sessionEvents, error: sessionEventsError }] = await Promise.all([
       supabaseAdmin
         .from("analytics_sessions")
         .select("id, page_path, started_at, last_seen_at, max_video_seconds, lead_id")
         .eq("page_path", TRACKED_PATH)
+        .gte("started_at", bounds.from)
+        .lt("started_at", bounds.to)
         .order("last_seen_at", { ascending: false })
         .limit(500),
       supabaseAdmin
         .from("analytics_events")
         .select("session_id, event_type, created_at")
+        .gte("created_at", bounds.from)
+        .lt("created_at", bounds.to)
         .order("created_at", { ascending: false })
         .limit(5000),
     ]);
