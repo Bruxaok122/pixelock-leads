@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { CalendarIcon, RefreshCw } from "lucide-react";
+import { CalendarIcon, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { listLeads, deleteLead, deleteAllLeads, type LeadRow } from "@/lib/leads.functions";
 import { formatDateTime, formatWhatsapp, getBrasiliaDateKey, whatsappLink } from "@/lib/lead-validation";
 import { useLeadChime } from "@/hooks/use-lead-chime";
+import { recordAdminAction } from "@/lib/audit.functions";
+import metaLogo from "@/assets/meta-logo.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   head: () => ({
@@ -31,6 +33,7 @@ function PainelPage() {
   const fetchLeads = useServerFn(listLeads);
   const removeLead = useServerFn(deleteLead);
   const removeAllLeads = useServerFn(deleteAllLeads);
+  const recordAction = useServerFn(recordAdminAction);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [wiping, setWiping] = useState(false);
   const { play, unlock } = useLeadChime();
@@ -58,6 +61,7 @@ function PainelPage() {
 
   const [section, setSection] = useState<"dashboard" | "leads" | "pixel" | "visitors">("dashboard");
   const [pixelId, setPixelId] = useState("");
+  const [savedPixelId, setSavedPixelId] = useState("");
   const [pixelEnabled, setPixelEnabled] = useState(false);
   const [trackingEvents, setTrackingEvents] = useState(["PageView", "ViewContent", "InitiateCheckout", "Lead"]);
   const [pixelMessage, setPixelMessage] = useState<string | null>(null);
@@ -78,6 +82,7 @@ function PainelPage() {
   useEffect(() => {
     void fetchTrackingSettings().then((settings) => {
       setPixelId(settings.pixelId ?? "");
+      setSavedPixelId(settings.pixelId ?? "");
       setPixelEnabled(settings.pixelEnabled);
       setTrackingEvents(settings.trackedEvents);
     });
@@ -87,9 +92,25 @@ function PainelPage() {
     setPixelMessage(null);
     try {
       await updateTrackingSettings({ data: { pixelId, pixelEnabled, trackedEvents: trackingEvents } });
+      setSavedPixelId(pixelId.trim());
       setPixelMessage("Configuração salva. O rastreamento da página /ufhurd será atualizado automaticamente.");
     } catch (saveError) {
       setPixelMessage((saveError as Error).message);
+    }
+  }
+
+  async function handleDeletePixel() {
+    if (!window.confirm("Excluir o Pixel Meta atual?")) return;
+    setPixelMessage(null);
+    try {
+      await updateTrackingSettings({ data: { pixelId: "", pixelEnabled: false, trackedEvents: [] } });
+      setPixelId("");
+      setSavedPixelId("");
+      setPixelEnabled(false);
+      setTrackingEvents(["PageView", "ViewContent", "InitiateCheckout", "Lead"]);
+      setPixelMessage("Pixel excluído. Agora você pode cadastrar outro.");
+    } catch (deleteError) {
+      setPixelMessage((deleteError as Error).message);
     }
   }
 
@@ -97,6 +118,7 @@ function PainelPage() {
     setRefreshingVisitors(true);
     try {
       await queryClient.refetchQueries({ queryKey: ["visitor-sessions"], type: "active" });
+      await recordAction({ data: { action: "Atualizou manualmente o status dos visitantes" } });
     } finally {
       setRefreshingVisitors(false);
     }
@@ -138,6 +160,7 @@ function PainelPage() {
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
+    await recordAction({ data: { action: "Saiu do painel" } });
     queryClient.clear();
     await supabase.auth.signOut();
     void navigate({ to: "/auth", replace: true });
@@ -193,23 +216,27 @@ function PainelPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <button
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             onClick={() => {
               unlock();
               window.localStorage.setItem("painel-sound-enabled", "true");
               setSoundOn(true);
               play();
             }}
-            className="rounded-lg border border-border bg-secondary px-3 py-2 text-xs font-bold"
           >
             {soundOn ? "Som ativado 🔔" : "Ativar som"}
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             onClick={() => void handleSignOut()}
-            className="rounded-lg border border-border bg-secondary px-3 py-2 text-xs font-bold"
           >
             Sair
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -322,9 +349,9 @@ function PainelPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2 rounded-xl border border-border bg-secondary/60 px-3 py-2">
-              <span className="flex size-8 items-center justify-center rounded-full bg-primary text-sm font-black text-primary-foreground">
-                M
+            <div className="flex items-center gap-3 rounded-xl border border-border bg-secondary/60 px-3 py-2">
+              <span className="flex size-10 items-center justify-center rounded-lg bg-background/50 p-1.5">
+                <img src={metaLogo.url} alt="Meta" className="size-full object-contain" />
               </span>
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-widest">Meta</p>
@@ -333,63 +360,69 @@ function PainelPage() {
             </div>
           </div>
 
-          <div className="mt-5 rounded-xl border border-border bg-secondary/40 p-4">
-            <p className="text-sm font-bold">Provedor ativo: Meta</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Ao salvar, qualquer configuração anterior incompatível é desativada para evitar conflito de pixels.
-            </p>
-          </div>
+          {savedPixelId ? (
+            <div className="mt-6 overflow-hidden rounded-xl border border-border bg-secondary/40">
+              <div className="flex flex-wrap items-center justify-between gap-4 p-5">
+                <div className="flex min-w-0 items-center gap-4">
+                  <span className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-background/60 p-2.5">
+                    <img src={metaLogo.url} alt="Meta" className="size-full object-contain" />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-extrabold">Pixel Meta</h3>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${pixelEnabled ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"}`}>
+                        {pixelEnabled ? "Ativo" : "Inativo"}
+                      </span>
+                    </div>
+                    <p className="mt-1 break-all font-mono text-sm text-muted-foreground">ID {savedPixelId}</p>
+                  </div>
+                </div>
+                <Button type="button" variant="destructive" onClick={() => void handleDeletePixel()}>
+                  <Trash2 aria-hidden /> Excluir pixel
+                </Button>
+              </div>
+              <div className="border-t border-border px-5 py-3 text-xs text-muted-foreground">
+                Para cadastrar outro pixel, exclua este primeiro.
+              </div>
+            </div>
+          ) : (
+            <div className="mt-6">
+              <label className="block text-sm font-bold" htmlFor="pixel-id">ID do pixel da Meta</label>
+              <input
+                id="pixel-id"
+                value={pixelId}
+                onChange={(event) => setPixelId(event.target.value)}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="Ex.: 123456789012345"
+                className="field-input mt-1.5 w-full rounded-lg px-3 py-2 outline-none"
+              />
+              <p className="mt-1.5 text-xs text-muted-foreground">Informe somente o ID numérico fornecido pela Meta.</p>
 
-          <label className="mt-5 block text-sm font-bold" htmlFor="pixel-id">ID do pixel da Meta</label>
-          <input
-            id="pixel-id"
-            value={pixelId}
-            onChange={(event) => setPixelId(event.target.value)}
-            inputMode="numeric"
-            pattern="[0-9]*"
-            placeholder="Ex.: 123456789012345"
-            className="field-input mt-1.5 w-full rounded-lg px-3 py-2 outline-none"
-          />
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            Informe somente o ID numérico fornecido pelo Events Manager da Meta.
-          </p>
-
-          <label className="mt-4 flex items-center gap-2 text-sm font-semibold">
-            <input
-              type="checkbox"
-              checked={pixelEnabled}
-              onChange={(event) => setPixelEnabled(event.target.checked)}
-            />
-            Ativar rastreamento
-          </label>
-
-          <p className="mt-5 text-sm font-bold">Eventos enviados</p>
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            {["PageView", "ViewContent", "InitiateCheckout", "Lead"].map((eventName) => (
-              <label key={eventName} className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={trackingEvents.includes(eventName)}
-                  onChange={(event) =>
-                    setTrackingEvents((current) =>
-                      event.target.checked
-                        ? [...current, eventName]
-                        : current.filter((item) => item !== eventName),
-                    )
-                  }
-                />
-                {eventName}
+              <label className="mt-4 flex items-center gap-2 text-sm font-semibold">
+                <input type="checkbox" checked={pixelEnabled} onChange={(event) => setPixelEnabled(event.target.checked)} />
+                Ativar rastreamento
               </label>
-            ))}
-          </div>
 
-          <button
-            type="button"
-            onClick={() => void handleSavePixel()}
-            className="btn-cta mt-6 rounded-lg px-4 py-2 text-sm font-extrabold"
-          >
-            Salvar configuração
-          </button>
+              <p className="mt-5 text-sm font-bold">Eventos enviados</p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                {["PageView", "ViewContent", "InitiateCheckout", "Lead"].map((eventName) => (
+                  <label key={eventName} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={trackingEvents.includes(eventName)}
+                      onChange={(event) => setTrackingEvents((current) => event.target.checked ? [...current, eventName] : current.filter((item) => item !== eventName))}
+                    />
+                    {eventName}
+                  </label>
+                ))}
+              </div>
+
+              <Button type="button" className="mt-6" disabled={!pixelId.trim()} onClick={() => void handleSavePixel()}>
+                Salvar pixel
+              </Button>
+            </div>
+          )}
 
           {pixelMessage ? <p className="mt-3 text-sm text-muted-foreground">{pixelMessage}</p> : null}
         </section>
