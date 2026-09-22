@@ -141,6 +141,13 @@ export const saveTrackingSettings = createServerFn({ method: "POST" })
     );
 
     if (error) throw new Error(error.message);
+    const { writeAdminAudit } = await import("@/lib/audit.server");
+    await writeAdminAudit({
+      actorId: context.userId,
+      action: data.pixelId
+        ? `Salvou o Pixel Meta ${data.pixelId} (${data.pixelEnabled ? "ativo" : "inativo"})`
+        : "Excluiu o Pixel Meta",
+    });
     return { ok: true as const };
   });
 

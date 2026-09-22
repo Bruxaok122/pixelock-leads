@@ -68,6 +68,11 @@ export const lockLogs = createServerFn({ method: "POST" }).handler(async () => {
   return { ok: true as const };
 });
 
+export const getLogsAccessStatus = createServerFn({ method: "GET" }).handler(async () => {
+  const session = await getLogsSession();
+  return { unlocked: session.data.unlocked === true };
+});
+
 export const getAuditLogs = createServerFn({ method: "GET" }).handler(async () => {
   await requireLogsAccess();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -117,13 +122,9 @@ export const recordAdminAction = createServerFn({ method: "POST" })
     });
     if (!isAdmin) throw new Error("Acesso restrito ao administrador.");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userAgent = getRequestHeader("user-agent") ?? "navegador não identificado";
     const action = `${data.action} · ${userAgent.slice(0, 80)}`;
-    const { error } = await supabaseAdmin.from("admin_audit_log").insert({
-      actor_id: context.userId,
-      action,
-    });
-    if (error) throw new Error(error.message);
+    const { writeAdminAudit } = await import("@/lib/audit.server");
+    await writeAdminAudit({ actorId: context.userId, action });
     return { ok: true as const };
   });

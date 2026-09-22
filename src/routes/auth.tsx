@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { recordAdminAction } from "@/lib/audit.functions";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -18,6 +20,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const recordAction = useServerFn(recordAdminAction);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +45,7 @@ function AuthPage() {
       setError("E-mail ou senha inválidos.");
       return;
     }
+    await recordAction({ data: { action: "Entrou no painel" } });
     void navigate({ to: "/painel", replace: true });
   }
 

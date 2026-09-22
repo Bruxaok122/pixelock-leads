@@ -132,6 +132,12 @@ export const deleteLead = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("leads").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    const { writeAdminAudit } = await import("@/lib/audit.server");
+    await writeAdminAudit({
+      actorId: context.userId,
+      action: "Excluiu um lead",
+      targetId: data.id,
+    });
     return { ok: true as const };
   });
 
@@ -140,10 +146,20 @@ export const deleteAllLeads = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { count, error: countError } = await supabaseAdmin
+      .from("leads")
+      .select("id", { count: "exact", head: true });
+    if (countError) throw new Error(countError.message);
     const { error } = await supabaseAdmin
       .from("leads")
       .delete()
       .not("id", "is", null);
     if (error) throw new Error(error.message);
+    const { writeAdminAudit } = await import("@/lib/audit.server");
+    await writeAdminAudit({
+      actorId: context.userId,
+      action: "Excluiu todos os leads",
+      affectedCount: count ?? 0,
+    });
     return { ok: true as const };
   });

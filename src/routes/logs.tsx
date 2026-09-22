@@ -5,7 +5,7 @@ import { Activity, LockKeyhole, LogOut, RefreshCw, ShieldCheck } from "lucide-re
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getAuditLogs, lockLogs, unlockLogs } from "@/lib/audit.functions";
+import { getAuditLogs, getLogsAccessStatus, lockLogs, unlockLogs } from "@/lib/audit.functions";
 import { formatDateTime } from "@/lib/lead-validation";
 
 export const Route = createFileRoute("/logs")({
@@ -27,10 +27,12 @@ export const Route = createFileRoute("/logs")({
 function LogsPage() {
   const queryClient = useQueryClient();
   const fetchLogs = useServerFn(getAuditLogs);
+  const fetchAccessStatus = useServerFn(getLogsAccessStatus);
   const unlock = useServerFn(unlockLogs);
   const lock = useServerFn(lockLogs);
   const [password, setPassword] = useState("");
-  const [unlocked, setUnlocked] = useState(false);
+  const accessQuery = useQuery({ queryKey: ["logs-access-status"], queryFn: fetchAccessStatus, retry: false });
+  const unlocked = accessQuery.data?.unlocked === true;
   const [unlocking, setUnlocking] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -53,12 +55,16 @@ function LogsPage() {
         return;
       }
       setPassword("");
-      setUnlocked(true);
+      await queryClient.invalidateQueries({ queryKey: ["logs-access-status"] });
     } catch {
       setErrorMessage("Não foi possível acessar os logs agora.");
     } finally {
       setUnlocking(false);
     }
+  }
+
+  if (accessQuery.isLoading) {
+    return <main className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">Verificando acesso...</main>;
   }
 
   if (!unlocked) {
@@ -106,7 +112,7 @@ function LogsPage() {
           <Button type="button" variant="outline" onClick={() => void logsQuery.refetch()} disabled={logsQuery.isFetching}>
             <RefreshCw className={logsQuery.isFetching ? "animate-spin" : undefined} aria-hidden /> Atualizar
           </Button>
-          <Button type="button" variant="secondary" onClick={async () => { await lock(); queryClient.removeQueries({ queryKey: ["admin-audit-logs"] }); setUnlocked(false); }}>
+          <Button type="button" variant="secondary" onClick={async () => { await lock(); queryClient.removeQueries({ queryKey: ["admin-audit-logs"] }); await queryClient.invalidateQueries({ queryKey: ["logs-access-status"] }); }}>
             <LogOut aria-hidden /> Sair
           </Button>
         </div>
