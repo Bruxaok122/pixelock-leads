@@ -12,5 +12,5 @@ export async function writeAdminAudit(input: {
     affected_count: input.affectedCount ?? 1,
   });
 
-  if (error) throw new Error(error.message);
+  if (error) console.error("Falha ao registrar auditoria administrativa:", error.message);
 }
