@@ -12,7 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as LogsRouteImport } from './routes/logs'
+import { Route as MonitoramentoLogsRouteImport } from './routes/monitoramento-logs'
 import { Route as PoliticaRouteImport } from './routes/politica'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as UfhurdRouteImport } from './routes/ufhurd'
@@ -33,9 +33,9 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LogsRoute = LogsRouteImport.update({
-  id: '/logs',
-  path: '/logs',
+const MonitoramentoLogsRoute = MonitoramentoLogsRouteImport.update({
+  id: '/monitoramento-logs',
+  path: '/monitoramento-logs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PoliticaRoute = PoliticaRouteImport.update({
@@ -67,7 +67,7 @@ const ApiPublicBootstrapAdminRoute = ApiPublicBootstrapAdminRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/logs': typeof LogsRoute
+  '/monitoramento-logs': typeof MonitoramentoLogsRoute
   '/politica': typeof PoliticaRoute
   '/termos': typeof TermosRoute
   '/ufhurd': typeof UfhurdRoute
@@ -77,7 +77,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/logs': typeof LogsRoute
+  '/monitoramento-logs': typeof MonitoramentoLogsRoute
   '/politica': typeof PoliticaRoute
   '/termos': typeof TermosRoute
   '/ufhurd': typeof UfhurdRoute
@@ -89,7 +89,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/logs': typeof LogsRoute
+  '/monitoramento-logs': typeof MonitoramentoLogsRoute
   '/politica': typeof PoliticaRoute
   '/termos': typeof TermosRoute
   '/ufhurd': typeof UfhurdRoute
@@ -101,7 +101,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
-    | '/logs'
+    | '/monitoramento-logs'
     | '/politica'
     | '/termos'
     | '/ufhurd'
@@ -111,7 +111,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
-    | '/logs'
+    | '/monitoramento-logs'
     | '/politica'
     | '/termos'
     | '/ufhurd'
@@ -122,7 +122,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
-    | '/logs'
+    | '/monitoramento-logs'
     | '/politica'
     | '/termos'
     | '/ufhurd'
@@ -134,7 +134,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
-  LogsRoute: typeof LogsRoute
+  MonitoramentoLogsRoute: typeof MonitoramentoLogsRoute
   PoliticaRoute: typeof PoliticaRoute
   TermosRoute: typeof TermosRoute
   UfhurdRoute: typeof UfhurdRoute
@@ -164,11 +164,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/logs': {
-      id: '/logs'
-      path: '/logs'
-      fullPath: '/logs'
-      preLoaderRoute: typeof LogsRouteImport
+    '/monitoramento-logs': {
+      id: '/monitoramento-logs'
+      path: '/monitoramento-logs'
+      fullPath: '/monitoramento-logs'
+      preLoaderRoute: typeof MonitoramentoLogsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/politica': {
@@ -224,7 +224,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
-  LogsRoute: LogsRoute,
+  MonitoramentoLogsRoute: MonitoramentoLogsRoute,
   PoliticaRoute: PoliticaRoute,
   TermosRoute: TermosRoute,
   UfhurdRoute: UfhurdRoute,
