@@ -10,3 +10,5 @@
   - [x] Registrar tentativa de retorno após exibir o popup de saída
   - [x] Corrigir envio da chave Pix, presença offline, horário de Brasília e atualização manual
 - [x] Adicionar filtro diário com calendário e virada automática no horário de Brasília
+- [ ] Criar /logs com senha exclusiva e auditoria de acessos e ações do painel
+- [ ] Exibir o Pixel Meta salvo em um cartão visual e exigir exclusão antes de cadastrar outro
