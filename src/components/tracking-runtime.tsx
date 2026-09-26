@@ -1,13 +1,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef } from "react";
 import { getTrackingSettings, trackVisitorEvent } from "@/lib/tracking.functions";
-
-declare global {
-  interface Window {
-    fbq?: (...args: unknown[]) => void;
-    _fbq?: Window["fbq"];
-  }
-}
+import { initializeMetaPixel, trackMetaEvent } from "@/lib/meta-pixel";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -60,6 +54,7 @@ export function TrackingRuntime({
   const videoPlayingRef = useRef(videoPlaying);
   const lastTypingAtRef = useRef(0);
   const leadSubmittedRef = useRef(converted);
+  const viewContentSentRef = useRef(false);
 
   useEffect(() => {
     convertedRef.current = converted;
@@ -67,6 +62,7 @@ export function TrackingRuntime({
   }, [converted, videoSeconds]);
 
   useEffect(() => {
+    let active = true;
     const sessionId = getSessionId();
     sessionIdRef.current = sessionId;
 
@@ -82,23 +78,9 @@ export function TrackingRuntime({
     });
 
     void getSettings().then((settings) => {
-      if (!settings.pixelEnabled || !settings.pixelId) return;
-      if (document.querySelector(`[data-dynamic-pixel="${settings.pixelId}"]`)) return;
-
-      const script = document.createElement("script");
-      script.dataset["dynamicPixel"] = settings.pixelId;
-      script.innerHTML = `
-        !function(f,b,e,v,n,t,s){
-          if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-          n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;
-          s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)
-        }(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');
-        fbq('init', '${settings.pixelId.replaceAll("'", "")}');
-        fbq('track', 'PageView');
-      `;
-      document.head.appendChild(script);
+      if (active && settings.pixelEnabled && settings.pixelId) initializeMetaPixel(settings.pixelId);
+    }).catch(() => {
+      // A temporary settings failure must not interrupt visitor tracking.
     });
 
     const handlePageExit = () => {
@@ -180,6 +162,7 @@ export function TrackingRuntime({
     const handleLeadSubmitted = () => {
       if (leadSubmittedRef.current) return;
       leadSubmittedRef.current = true;
+      trackMetaEvent("Lead");
       sendImmediateEvent("Lead");
     };
 
@@ -192,6 +175,7 @@ export function TrackingRuntime({
     window.addEventListener("ufhurd:lead-submitted", handleLeadSubmitted);
 
     return () => {
+      active = false;
       window.removeEventListener("pagehide", handlePageExit);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener("input", handleInput, true);
@@ -207,6 +191,10 @@ export function TrackingRuntime({
     if (!sessionId) return;
 
     if (videoSeconds > 0) playedRef.current = true;
+    if (videoSeconds > 0 && !viewContentSentRef.current) {
+      viewContentSentRef.current = true;
+      trackMetaEvent("ViewContent");
+    }
 
     const justUnlocked = pixUnlocked && !pixUnlockedRef.current;
     if (pixUnlocked) pixUnlockedRef.current = true;

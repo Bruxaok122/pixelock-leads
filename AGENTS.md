@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- O Pixel Meta da página de vendas usa a configuração persistida no painel e um inicializador único no navegador; assim a troca de ID não exige código e evita PageView duplicado.
+- Os botões externos enviam apenas InitiateCheckout; Purchase exige confirmação de pagamento pelo provedor para não inflar conversões.

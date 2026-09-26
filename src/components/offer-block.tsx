@@ -1,5 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import { CHECKOUT_BY_PRICE, pixDiscountFor, pixPriceFor } from "@/lib/checkout";
+import { trackMetaEvent } from "@/lib/meta-pixel";
 
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -12,7 +13,10 @@ export function OfferBlock({ price, previousPrice }: { price: number; previousPr
   const pixPrice = pixPriceFor(price);
   const checkoutUrl = CHECKOUT_BY_PRICE[price];
   const goCheckout = () => {
-    if (checkoutUrl) window.open(checkoutUrl, "_blank", "noopener,noreferrer");
+    if (checkoutUrl) {
+      trackMetaEvent("InitiateCheckout");
+      window.open(checkoutUrl, "_blank", "noopener,noreferrer");
+    }
   };
 
   return (
