@@ -1,4 +1,5 @@
 import { createElement, useEffect, useRef } from "react";
+import { preventLegacyPixel } from "@/lib/meta-pixel";
 
 const ACCOUNT_ID = "f17b7cf5-56fb-4776-bb77-71769cdf107c";
 const PLAYER_ID = "6aa1f56413889c63d1af501d";
@@ -6,6 +7,7 @@ const PLAYER_SRC = `https://scripts.converteai.net/${ACCOUNT_ID}/players/${PLAYE
 
 function loadPlayerScript(): void {
   if (typeof document === "undefined") return;
+  preventLegacyPixel();
   if (document.querySelector(`script[src="${PLAYER_SRC}"]`)) return;
   const script = document.createElement("script");
   script.src = PLAYER_SRC;
