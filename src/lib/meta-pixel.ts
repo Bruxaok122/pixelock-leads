@@ -31,6 +31,8 @@ export function initializeMetaPixel(pixelId: string): void {
   if (pixelId === LEGACY_PIXEL_ID) return;
 
   preventLegacyPixel();
+  const fbq = window.fbq;
+  if (!fbq) return;
   if (!document.querySelector('script[src="https://connect.facebook.net/en_US/fbevents.js"]')) {
     const script = document.createElement("script");
     script.async = true;
@@ -39,10 +41,10 @@ export function initializeMetaPixel(pixelId: string): void {
   }
 
   if (activePixelId !== pixelId) {
-    window.fbq("init", pixelId);
+    fbq("init", pixelId);
     activePixelId = pixelId;
   }
-  window.fbq("trackSingle", pixelId, "PageView");
+  fbq("trackSingle", pixelId, "PageView");
 }
 
 export function trackMetaEvent(eventName: "ViewContent" | "Lead" | "InitiateCheckout"): void {
