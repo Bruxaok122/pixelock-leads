@@ -15,6 +15,7 @@ export function OfferBlock({ price, previousPrice }: { price: number; previousPr
   const goCheckout = () => {
     if (checkoutUrl) {
       trackMetaEvent("InitiateCheckout");
+      window.dispatchEvent(new Event("ufhurd:checkout-clicked"));
       window.open(checkoutUrl, "_blank", "noopener,noreferrer");
     }
   };

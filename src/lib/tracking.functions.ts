@@ -11,6 +11,7 @@ function analyticsEventType(eventName: string) {
   // O estado convertido acompanha a sessão, mas não pode transformar ações
   // posteriores (como saída ou pausa) em um novo envio de lead.
   if (eventName === "Lead") return "lead_submitted";
+  if (eventName === "CheckoutClicked") return "click";
   if (eventName === "PixUnlocked") return "form_unlocked";
   if (eventName === "VideoPlay") return "video_played";
   if (eventName === "VideoPause") return "video_paused";
@@ -206,9 +207,9 @@ export const trackVisitorEvent = createServerFn({ method: "POST" })
 
     const { error: eventError } = await supabaseAdmin.from("analytics_events").insert({
       session_id: data.sessionId,
-       event_type: analyticsEventType(data.eventName),
+      event_type: analyticsEventType(data.eventName),
       numeric_value: data.videoSeconds,
-      target_key: ipAddress === "0.0.0.0" ? null : "tracked",
+      target_key: data.eventName === "CheckoutClicked" ? "checkout" : ipAddress === "0.0.0.0" ? null : "tracked",
     });
 
     if (eventError) throw new Error(eventError.message);
@@ -245,7 +246,7 @@ export const listVisitorSessions = createServerFn({ method: "GET" })
         .limit(500),
       supabaseAdmin
         .from("analytics_events")
-        .select("session_id, event_type, created_at")
+        .select("session_id, event_type, target_key, created_at")
         .gte("created_at", bounds.from)
         .lt("created_at", bounds.to)
         .order("created_at", { ascending: false })
@@ -263,7 +264,10 @@ export const listVisitorSessions = createServerFn({ method: "GET" })
       // Heartbeats e progresso mantêm a presença online, mas não substituem
       // a última ação explícita feita pelo visitante.
       if (!passiveEventTypes.has(event.event_type) && !latestEventBySession.has(event.session_id)) {
-        latestEventBySession.set(event.session_id, event.event_type);
+        latestEventBySession.set(
+          event.session_id,
+          event.event_type === "click" && event.target_key === "checkout" ? "checkout_clicked" : event.event_type,
+        );
       }
       if (event.event_type === "lead_submitted") {
         convertedSessionIds.add(event.session_id);

@@ -55,6 +55,7 @@ export function TrackingRuntime({
   const lastTypingAtRef = useRef(0);
   const leadSubmittedRef = useRef(converted);
   const viewContentSentRef = useRef(false);
+  const checkoutClickedRef = useRef(false);
 
   useEffect(() => {
     convertedRef.current = converted;
@@ -100,6 +101,8 @@ export function TrackingRuntime({
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
+        // O checkout abre em outra aba; não substitua o clique por uma saída.
+        if (checkoutClickedRef.current) return;
         handlePageExit();
         return;
       }
@@ -159,6 +162,10 @@ export function TrackingRuntime({
     };
 
     const handleBackIntercepted = () => sendImmediateEvent("BackIntercepted");
+    const handleCheckoutClicked = () => {
+      checkoutClickedRef.current = true;
+      sendImmediateEvent("CheckoutClicked");
+    };
     const handleLeadSubmitted = () => {
       if (leadSubmittedRef.current) return;
       leadSubmittedRef.current = true;
@@ -172,6 +179,7 @@ export function TrackingRuntime({
     document.addEventListener("focusin", handleFocusIn, true);
     document.addEventListener("focusout", handleFocusOut, true);
     window.addEventListener("ufhurd:back-intercepted", handleBackIntercepted);
+    window.addEventListener("ufhurd:checkout-clicked", handleCheckoutClicked);
     window.addEventListener("ufhurd:lead-submitted", handleLeadSubmitted);
 
     return () => {
@@ -182,6 +190,7 @@ export function TrackingRuntime({
       document.removeEventListener("focusin", handleFocusIn, true);
       document.removeEventListener("focusout", handleFocusOut, true);
       window.removeEventListener("ufhurd:back-intercepted", handleBackIntercepted);
+      window.removeEventListener("ufhurd:checkout-clicked", handleCheckoutClicked);
       window.removeEventListener("ufhurd:lead-submitted", handleLeadSubmitted);
     };
   }, [getSettings, sendEvent]);
@@ -243,7 +252,8 @@ export function TrackingRuntime({
   useEffect(() => {
     const interval = window.setInterval(() => {
       const sessionId = sessionIdRef.current;
-      if (!sessionId) return;
+      // Uma aba de pagamento aberta em primeiro plano não mantém a visita online.
+      if (!sessionId || (checkoutClickedRef.current && document.visibilityState === "hidden")) return;
 
       void sendEvent({
         data: {

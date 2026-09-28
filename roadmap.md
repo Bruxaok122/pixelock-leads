@@ -13,3 +13,4 @@
 - [ ] Criar /logs com senha exclusiva e auditoria de acessos e ações do painel
 - [ ] Exibir o Pixel Meta salvo em um cartão visual e exigir exclusão antes de cadastrar outro
 - [x] Instalar Pixel Meta 1889400058394852 sem duplicação e medir início do checkout nos botões
+- [x] Mostrar “Foi pro checkout” no acompanhamento ao vivo quando o visitante clicar em qualquer botão de pagamento

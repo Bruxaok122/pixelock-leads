@@ -40,6 +40,8 @@ export const Route = createFileRoute("/ufhurd")({
         property: "og:description",
         content: "Assista ao vídeo informativo e libere o seu resgate. Uma liberação disponível por CPF.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Index,
