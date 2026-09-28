@@ -16,6 +16,8 @@ export const Route = createFileRoute("/politica")({
         content:
           "Política de privacidade da plataforma Em Alta no Mundo. Coleta, uso e proteção dos seus dados.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: PoliticaPage,

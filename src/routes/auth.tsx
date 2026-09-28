@@ -13,6 +13,8 @@ export const Route = createFileRoute("/auth")({
       { name: "robots", content: "noindex" },
       { property: "og:title", content: "Acesso ao painel | Indicador Pro" },
       { property: "og:description", content: "Área restrita de administração dos resgates." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,

@@ -16,6 +16,8 @@ export const Route = createFileRoute("/termos")({
         content:
           "Termos de uso da plataforma Em Alta no Mundo. Condições de acesso, uso e responsabilidades.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: TermosPage,

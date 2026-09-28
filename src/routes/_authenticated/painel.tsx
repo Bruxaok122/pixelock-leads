@@ -22,6 +22,8 @@ export const Route = createFileRoute("/_authenticated/painel")({
       { name: "robots", content: "noindex" },
       { property: "og:title", content: "Painel de leads | Indicador Pro" },
       { property: "og:description", content: "Acompanhe em tempo real os resgates solicitados." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: PainelPage,
