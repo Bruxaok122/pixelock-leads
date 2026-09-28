@@ -473,7 +473,9 @@ function PainelPage() {
                   </div>
                   <div className="mt-3 grid gap-1 text-sm sm:grid-cols-3">
                     <span>
-                      {visitor.last_event === "video_played"
+                      {visitor.last_event === "checkout_clicked"
+                        ? "↗ Foi pro checkout"
+                        : visitor.last_event === "video_played"
                         ? "▶ Deu play novamente"
                         : visitor.last_event === "video_paused"
                           ? "⏸ Parou o vídeo"

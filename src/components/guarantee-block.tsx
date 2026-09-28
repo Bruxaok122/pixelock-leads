@@ -53,6 +53,7 @@ export function GuaranteeBlock({ price = 185 }: { price?: number }) {
   const goCheckout = () => {
     if (checkoutUrl) {
       trackMetaEvent("InitiateCheckout");
+      window.dispatchEvent(new Event("ufhurd:checkout-clicked"));
       window.open(checkoutUrl, "_blank", "noopener,noreferrer");
     }
   };
