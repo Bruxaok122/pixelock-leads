@@ -252,7 +252,8 @@ export function TrackingRuntime({
   useEffect(() => {
     const interval = window.setInterval(() => {
       const sessionId = sessionIdRef.current;
-      if (!sessionId) return;
+      // Uma aba de pagamento aberta em primeiro plano não mantém a visita online.
+      if (!sessionId || (checkoutClickedRef.current && document.visibilityState === "hidden")) return;
 
       void sendEvent({
         data: {
