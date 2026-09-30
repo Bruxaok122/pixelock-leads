@@ -1,5 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
-import { CHECKOUT_BY_PRICE, pixDiscountFor, pixPriceFor } from "@/lib/checkout";
+import { checkoutUrlFor, pixDiscountFor, pixPriceFor } from "@/lib/checkout";
 import { trackMetaEvent } from "@/lib/meta-pixel";
 
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -11,8 +11,8 @@ function installment(total: number, times: number) {
 export function OfferBlock({ price, previousPrice }: { price: number; previousPrice?: number }) {
   const pixDiscount = pixDiscountFor(price);
   const pixPrice = pixPriceFor(price);
-  const checkoutUrl = CHECKOUT_BY_PRICE[price];
   const goCheckout = () => {
+    const checkoutUrl = checkoutUrlFor(price);
     if (checkoutUrl) {
       trackMetaEvent("InitiateCheckout");
       window.dispatchEvent(new Event("ufhurd:checkout-clicked"));
