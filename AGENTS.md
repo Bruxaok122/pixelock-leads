@@ -14,4 +14,3 @@
 - O status de checkout usa o evento existente `click` com `target_key=checkout`, disparado pelos botões e registrado pela sessão de visitante; assim mantém compatibilidade com a restrição atual do banco e não interfere no envio de leads.
 - Os scripts de UTMs e Pixel da UTMify carregam uma vez no navegador apenas em /ufhurd, com os atributos e ID fornecidos, sem alterar o Pixel Meta configurável.
 - Os botões de pagamento usam os destinos finais SyncPayments e repassam os parâmetros de campanha no clique, pois o encurtador remove a query no redirecionamento.
-- O painel agrega métricas diárias no banco e limita só a lista visual de visitantes; assim o volume de eventos não corta os totais nem dispara leituras a cada evento.

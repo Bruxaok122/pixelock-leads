@@ -41,15 +41,6 @@ export interface VisitorSession {
   is_online: boolean;
 }
 
-export interface VisitorMetrics {
-  total: number;
-  online: number;
-  played: number;
-  unlocked: number;
-  converted: number;
-  average_seconds: number;
-}
-
 function isValidMetaPixelId(value: string) {
   return META_PIXEL_ID_PATTERN.test(value);
 }
@@ -242,20 +233,67 @@ export const listVisitorSessions = createServerFn({ method: "GET" })
 
     if (!isAdmin) throw new Error("Acesso restrito ao administrador.");
 
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const bounds = getBrasiliaDayBounds(input.date);
-    // The authenticated RPC aggregates the entire day in the database and only
-    // returns the most recent 500 rows for the live visitor list.
-    const rpc = context.supabase.rpc as unknown as (
-      name: string,
-      args: { day_start: string; day_end: string },
-    ) => Promise<{ data: unknown; error: { message: string } | null }>;
-    const { data, error } = await rpc("get_daily_panel_activity", {
-      day_start: bounds.from,
-      day_end: bounds.to,
-    });
+    const [{ data, error }, { data: sessionEvents, error: sessionEventsError }] = await Promise.all([
+      supabaseAdmin
+        .from("analytics_sessions")
+        .select("id, page_path, started_at, last_seen_at, max_video_seconds, lead_id")
+        .eq("page_path", TRACKED_PATH)
+        .gte("started_at", bounds.from)
+        .lt("started_at", bounds.to)
+        .order("last_seen_at", { ascending: false })
+        .limit(500),
+      supabaseAdmin
+        .from("analytics_events")
+        .select("session_id, event_type, target_key, created_at")
+        .gte("created_at", bounds.from)
+        .lt("created_at", bounds.to)
+        .order("created_at", { ascending: false })
+        .limit(5000),
+    ]);
+
     if (error) throw new Error(error.message);
-    if (!data || typeof data !== "object" || !("metrics" in data) || !("visitors" in data)) {
-      throw new Error("Não foi possível carregar as métricas do painel.");
+    if (sessionEventsError) throw new Error(sessionEventsError.message);
+
+    const latestEventBySession = new Map<string, string>();
+    const convertedSessionIds = new Set<string>();
+    const passiveEventTypes = new Set(["video_progress"]);
+
+    for (const event of sessionEvents ?? []) {
+      // Heartbeats e progresso mantêm a presença online, mas não substituem
+      // a última ação explícita feita pelo visitante.
+      if (!passiveEventTypes.has(event.event_type) && !latestEventBySession.has(event.session_id)) {
+        latestEventBySession.set(
+          event.session_id,
+          event.event_type === "click" && event.target_key === "checkout" ? "checkout_clicked" : event.event_type,
+        );
+      }
+      if (event.event_type === "lead_submitted") {
+        convertedSessionIds.add(event.session_id);
+      }
     }
-    return data as { metrics: VisitorMetrics; visitors: VisitorSession[] };
+
+    const serverNow = Date.now();
+
+    return (data ?? []).map((session): VisitorSession => {
+      const lastEvent = latestEventBySession.get(session.id) ?? "page_view";
+      const lastSeenAt = new Date(session.last_seen_at).getTime();
+
+      return {
+        session_id: session.id,
+        path: session.page_path,
+        page_viewed_at: session.started_at,
+        last_seen_at: session.last_seen_at,
+        video_played: session.max_video_seconds > 0,
+        video_seconds: session.max_video_seconds,
+        converted: session.lead_id !== null || convertedSessionIds.has(session.id),
+        last_event: lastEvent,
+        is_online:
+          lastEvent !== "page_exit" &&
+          Number.isFinite(lastSeenAt) &&
+          serverNow - lastSeenAt >= 0 &&
+          serverNow - lastSeenAt < 10000,
+      };
+    });
   });

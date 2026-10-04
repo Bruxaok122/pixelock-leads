@@ -72,16 +72,14 @@ function PainelPage() {
   const fetchVisitors = useServerFn(listVisitorSessions);
   const visitorIsOnline = (visitor: (typeof visitors)[number]) => visitor.is_online;
 
-  const { data: visitorData, error: visitorsError } = useQuery({
+  const { data: visitors = [], error: visitorsError } = useQuery({
     queryKey: ["visitor-sessions", selectedDate],
     queryFn: () => fetchVisitors({ data: { date: selectedDate } }),
     // Mantém o painel atualizado mesmo quando o realtime do Supabase
     // estiver indisponível no ambiente atual.
-    refetchInterval: 5000,
+    refetchInterval: 1000,
     refetchIntervalInBackground: true,
   });
-  const visitors = visitorData?.visitors ?? [];
-  const metrics = visitorData?.metrics;
 
   useEffect(() => {
     void fetchTrackingSettings().then((settings) => {
@@ -142,6 +140,12 @@ function PainelPage() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "leads" }, () => {
         void queryClient.invalidateQueries({ queryKey: ["leads"] });
         play();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "analytics_sessions" }, () => {
+        void queryClient.invalidateQueries({ queryKey: ["visitor-sessions"] });
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "analytics_events" }, () => {
+        void queryClient.invalidateQueries({ queryKey: ["visitor-sessions"] });
       })
       .subscribe();
 
@@ -294,33 +298,33 @@ function PainelPage() {
           ) : null}
           <article className="surface-card rounded-2xl p-5">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Visitantes registrados</p>
-            <p className="mt-2 text-3xl font-extrabold">{metrics?.total ?? 0}</p>
+            <p className="mt-2 text-3xl font-extrabold">{visitors.length}</p>
             <p className="mt-1 text-xs text-muted-foreground">Sessões na página /ufhurd</p>
           </article>
           <article className="surface-card rounded-2xl p-5">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Online agora</p>
             <p className="mt-2 text-3xl font-extrabold">
-               {metrics?.online ?? 0}
+               {visitors.filter(visitorIsOnline).length}
             </p>
           </article>
           <article className="surface-card rounded-2xl p-5">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Assistindo</p>
             <p className="mt-2 text-3xl font-extrabold">
-               {metrics?.played ?? 0}
+              {visitors.filter((visitor) => visitor.video_played).length}
             </p>
           </article>
           <article className="surface-card rounded-2xl p-5">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Pix liberado</p>
             <p className="mt-2 text-3xl font-extrabold">
-               {metrics?.unlocked ?? 0}
+              {visitors.filter((visitor) => visitor.video_seconds >= 120).length}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">Alcançaram 2 minutos de vídeo</p>
           </article>
           <article className="surface-card rounded-2xl p-5">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Conversão</p>
             <p className="mt-2 text-3xl font-extrabold">
-              {metrics?.total
-                ? `${Math.round((metrics.converted / metrics.total) * 100)}%`
+              {visitors.length
+                ? `${Math.round((visitors.filter((visitor) => visitor.converted).length / visitors.length) * 100)}%`
                 : "0%"}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">Visitantes que enviaram lead</p>
@@ -328,7 +332,9 @@ function PainelPage() {
           <article className="surface-card rounded-2xl p-5">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Tempo médio</p>
             <p className="mt-2 text-3xl font-extrabold">
-              {metrics?.average_seconds ?? 0}s
+              {visitors.length
+                ? `${Math.round(visitors.reduce((total, visitor) => total + visitor.video_seconds, 0) / visitors.length)}s`
+                : "0s"}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">Vídeo assistido por visitante</p>
           </article>
