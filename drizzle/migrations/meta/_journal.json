@@ -22,6 +22,13 @@
       "when": 1789917154594,
       "tag": "0002_enable_analytics_events_realtime",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791083033225,
+      "tag": "0003_aggregate_daily_panel_activity",
+      "breakpoints": true
     }
   ]
 }
