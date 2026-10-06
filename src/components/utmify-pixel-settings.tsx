@@ -37,8 +37,8 @@ export function UtmifyPixelSettings() {
   return (
     <section aria-label="Pixel UTMify" className="mt-8 border-t border-border pt-6">
       <div className="flex items-center gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary">
-          <Activity aria-hidden />
+        <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-background/60 p-1">
+          <img src={utmifyLogo.url} alt="UTMify" className="size-full object-contain" />
         </span>
         <h3 className="text-lg font-extrabold">Pixel UTMify</h3>
       </div>
