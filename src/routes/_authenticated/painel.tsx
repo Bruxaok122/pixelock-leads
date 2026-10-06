@@ -14,6 +14,7 @@ import { useLeadChime } from "@/hooks/use-lead-chime";
 import { recordAdminAction } from "@/lib/audit.functions";
 import metaLogo from "@/assets/meta-logo.png.asset.json";
 import { UtmifyPixelSettings } from "@/components/utmify-pixel-settings";
+import { CheckoutLinkSettings } from "@/components/checkout-link-settings";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   head: () => ({
@@ -62,7 +63,7 @@ function PainelPage() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const [section, setSection] = useState<"dashboard" | "leads" | "pixel" | "visitors">("dashboard");
+  const [section, setSection] = useState<"dashboard" | "leads" | "pixel" | "visitors" | "checkout">("dashboard");
   const [pixelId, setPixelId] = useState("");
   const [savedPixelId, setSavedPixelId] = useState("");
   const [pixelEnabled, setPixelEnabled] = useState(false);
@@ -194,6 +195,7 @@ function PainelPage() {
             ["dashboard", "Dashboard"],
             ["leads", "Leads recebidos"],
             ["pixel", "Pixels e conversões"],
+            ["checkout", "Links de checkout"],
             ["visitors", "Visitantes online"],
           ].map(([value, label]) => (
             <button
@@ -431,6 +433,8 @@ function PainelPage() {
           <UtmifyPixelSettings />
         </section>
       ) : null}
+
+      {section === "checkout" ? <CheckoutLinkSettings /> : null}
 
       {section === "visitors" ? (
         <section className="surface-card mt-6 rounded-2xl p-6">

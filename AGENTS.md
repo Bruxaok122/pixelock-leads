@@ -13,4 +13,4 @@
 - Os botões externos enviam apenas InitiateCheckout; Purchase exige confirmação de pagamento pelo provedor para não inflar conversões.
 - O status de checkout usa o evento existente `click` com `target_key=checkout`, disparado pelos botões e registrado pela sessão de visitante; assim mantém compatibilidade com a restrição atual do banco e não interfere no envio de leads.
 - UTMify campaign scripts load once only on /ufhurd; its pixel ID and enabled state are persisted independently in tracking_settings and initialized through TrackingRuntime so Meta configuration remains untouched.
-- Os botões de pagamento usam os destinos finais SyncPayments e repassam os parâmetros de campanha no clique, pois o encurtador remove a query no redirecionamento.
+- Checkout links are independently persisted per offer in tracking_settings and fetched on every payment click via useCheckout; this makes admin edits effective for already-open pages while preserving campaign parameters and checkout events.
