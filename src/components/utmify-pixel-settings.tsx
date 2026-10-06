@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Activity, Loader2, Power, Save, Trash2 } from "lucide-react";
+import { Loader2, Power, Save, Trash2 } from "lucide-react";
+import utmifyLogo from "@/assets/utmify-logo.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getUtmifySettings, saveUtmifySettings } from "@/lib/utmify.functions";
@@ -36,8 +37,8 @@ export function UtmifyPixelSettings() {
   return (
     <section aria-label="Pixel UTMify" className="mt-8 border-t border-border pt-6">
       <div className="flex items-center gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary">
-          <Activity aria-hidden />
+        <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-background/60 p-1">
+          <img src={utmifyLogo.url} alt="UTMify" className="size-full object-contain" />
         </span>
         <h3 className="text-lg font-extrabold">Pixel UTMify</h3>
       </div>
@@ -45,9 +46,17 @@ export function UtmifyPixelSettings() {
         : error ? <div role="alert" className="mt-4"><p className="text-sm text-destructive">Não foi possível carregar o Pixel UTMify.</p><Button variant="outline" className="mt-2" onClick={() => void queryClient.invalidateQueries({ queryKey: ["utmify-pixel-settings"] })}>Tentar novamente</Button></div>
         : data?.pixelId ? (
           <div className="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-secondary/40 p-5">
-            <div className="min-w-0">
-              <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold uppercase", data.enabled ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground")}>{data.enabled ? "Ativo" : "Inativo"}</span>
-              <p className="mt-2 break-all font-mono text-sm text-muted-foreground">ID {data.pixelId}</p>
+            <div className="flex min-w-0 items-center gap-4">
+              <span className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-background/60 p-2">
+                <img src={utmifyLogo.url} alt="UTMify" className="size-full object-contain" />
+              </span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-extrabold">Pixel UTMify</h3>
+                  <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold uppercase", data.enabled ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground")}>{data.enabled ? "Ativo" : "Inativo"}</span>
+                </div>
+                <p className="mt-1 break-all font-mono text-sm text-muted-foreground">ID {data.pixelId}</p>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" disabled={busy} onClick={() => void update(data.pixelId ?? "", !data.enabled)}><Power aria-hidden />{data.enabled ? "Desativar UTMify" : "Ativar UTMify"}</Button>
