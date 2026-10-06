@@ -15,7 +15,7 @@ export function CheckoutLinkSettings() {
       <h2 className="flex items-center gap-2 text-xl font-extrabold"><Link2 aria-hidden /> Links de checkout</h2>
       {isPending ? <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" aria-hidden /> Carregando...</p>
         : error ? <div className="mt-4" role="alert"><p className="text-sm text-destructive">Não foi possível carregar os links.</p><Button variant="outline" onClick={() => void refetch()}>Tentar novamente</Button></div>
-        : data ? <CheckoutLinkForm key={JSON.stringify(data)} links={data} /> : null}
+        : data ? <CheckoutLinkForm links={data} /> : null}
     </section>
   );
 }
