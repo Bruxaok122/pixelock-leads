@@ -1,8 +1,8 @@
 import { createElement, useEffect, useRef } from "react";
 import { preventLegacyPixel } from "@/lib/meta-pixel";
 
-const ACCOUNT_ID = "f17b7cf5-56fb-4776-bb77-71769cdf107c";
-const PLAYER_ID = "6aa1f56413889c63d1af501d";
+const ACCOUNT_ID = "dda77f08-1212-40a3-a7e6-b428322fa4c8";
+const PLAYER_ID = "6ac51fca844942e06243c478";
 const PLAYER_SRC = `https://scripts.converteai.net/${ACCOUNT_ID}/players/${PLAYER_ID}/v4/player.js`;
 
 function loadPlayerScript(): void {
