@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Adicionar gestão independente do Pixel UTMify na seção Pixels, preservando o ID atual
+
 - [x] Corrigir erro de compilação preservando as últimas edições
 - [ ] Concluir exclusão individual, exclusão em massa e download dos leads
 - [ ] Adicionar gestão do Pixel da Meta no painel
