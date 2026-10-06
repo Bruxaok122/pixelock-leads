@@ -2,6 +2,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef } from "react";
 import { getTrackingSettings, trackVisitorEvent } from "@/lib/tracking.functions";
 import { initializeMetaPixel, trackMetaEvent } from "@/lib/meta-pixel";
+import { getUtmifySettings } from "@/lib/utmify.functions";
+import { initializeUtmifyPixel } from "@/lib/utmify-pixel";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -44,6 +46,7 @@ export function TrackingRuntime({
   videoPlaying: boolean;
 }) {
   const getSettings = useServerFn(getTrackingSettings);
+  const getUtmify = useServerFn(getUtmifySettings);
   const sendEvent = useServerFn(trackVisitorEvent);
   const sessionIdRef = useRef<string | null>(null);
   const lastSecondRef = useRef(0);
@@ -56,6 +59,16 @@ export function TrackingRuntime({
   const leadSubmittedRef = useRef(converted);
   const viewContentSentRef = useRef(false);
   const checkoutClickedRef = useRef(false);
+
+  useEffect(() => {
+    let active = true;
+    void getUtmify().then((settings) => {
+      if (active && settings.enabled && settings.pixelId) initializeUtmifyPixel(settings.pixelId);
+    }).catch(() => {
+      // UTMify failure must not interrupt the video, leads or Meta tracking.
+    });
+    return () => { active = false; };
+  }, [getUtmify]);
 
   useEffect(() => {
     convertedRef.current = converted;

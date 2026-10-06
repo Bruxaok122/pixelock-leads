@@ -62,15 +62,6 @@ function Index() {
       document.head.appendChild(utms);
     }
 
-    (window as Window & { pixelId?: string }).pixelId = "6aba91af2ec859491d9e07ff";
-    const pixelUrl = "https://cdn.utmify.com.br/scripts/pixel/pixel.js";
-    if (!document.querySelector(`script[src="${pixelUrl}"]`)) {
-      const pixel = document.createElement("script");
-      pixel.src = pixelUrl;
-      pixel.async = true;
-      pixel.defer = true;
-      document.head.appendChild(pixel);
-    }
   }, []);
 
   const [elapsed, setElapsed] = useState(0);
