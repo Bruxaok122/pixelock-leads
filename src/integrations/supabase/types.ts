@@ -173,6 +173,7 @@ export type Database = {
           setting_key: string
           updated_at: string
           updated_by: string | null
+          utmify_pixel_id: string | null
         }
         Insert: {
           enabled?: boolean
@@ -181,6 +182,7 @@ export type Database = {
           setting_key: string
           updated_at?: string
           updated_by?: string | null
+          utmify_pixel_id?: string | null
         }
         Update: {
           enabled?: boolean
@@ -189,6 +191,7 @@ export type Database = {
           setting_key?: string
           updated_at?: string
           updated_by?: string | null
+          utmify_pixel_id?: string | null
         }
         Relationships: []
       }
