@@ -13,6 +13,7 @@ import { formatDateTime, formatWhatsapp, getBrasiliaDateKey, whatsappLink } from
 import { useLeadChime } from "@/hooks/use-lead-chime";
 import { recordAdminAction } from "@/lib/audit.functions";
 import metaLogo from "@/assets/meta-logo.png.asset.json";
+import { UtmifyPixelSettings } from "@/components/utmify-pixel-settings";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   head: () => ({
@@ -192,7 +193,7 @@ function PainelPage() {
           {[
             ["dashboard", "Dashboard"],
             ["leads", "Leads recebidos"],
-            ["pixel", "Pixel e conversões"],
+            ["pixel", "Pixels e conversões"],
             ["visitors", "Visitantes online"],
           ].map(([value, label]) => (
             <button
@@ -345,7 +346,7 @@ function PainelPage() {
         <section className="surface-card mt-6 rounded-2xl p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h2 className="text-xl font-extrabold">Pixel e conversões</h2>
+              <h2 className="text-xl font-extrabold">Pixels e conversões</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 O pixel da Meta é aplicado somente em /ufhurd e atualizado automaticamente, sem nova publicação.
               </p>
@@ -427,6 +428,7 @@ function PainelPage() {
           )}
 
           {pixelMessage ? <p className="mt-3 text-sm text-muted-foreground">{pixelMessage}</p> : null}
+          <UtmifyPixelSettings />
         </section>
       ) : null}
 

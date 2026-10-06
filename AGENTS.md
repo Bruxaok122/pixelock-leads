@@ -12,5 +12,5 @@
 - O Pixel Meta da página de vendas usa a configuração persistida no painel e um inicializador único no navegador; assim a troca de ID não exige código e evita PageView duplicado.
 - Os botões externos enviam apenas InitiateCheckout; Purchase exige confirmação de pagamento pelo provedor para não inflar conversões.
 - O status de checkout usa o evento existente `click` com `target_key=checkout`, disparado pelos botões e registrado pela sessão de visitante; assim mantém compatibilidade com a restrição atual do banco e não interfere no envio de leads.
-- Os scripts de UTMs e Pixel da UTMify carregam uma vez no navegador apenas em /ufhurd, com os atributos e ID fornecidos, sem alterar o Pixel Meta configurável.
+- UTMify campaign scripts load once only on /ufhurd; its pixel ID and enabled state are persisted independently in tracking_settings and initialized through TrackingRuntime so Meta configuration remains untouched.
 - Os botões de pagamento usam os destinos finais SyncPayments e repassam os parâmetros de campanha no clique, pois o encurtador remove a query no redirecionamento.
