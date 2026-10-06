@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Activity, Loader2, Power, Save, Trash2 } from "lucide-react";
+import { Loader2, Power, Save, Trash2 } from "lucide-react";
+import utmifyLogo from "@/assets/utmify-logo.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getUtmifySettings, saveUtmifySettings } from "@/lib/utmify.functions";
