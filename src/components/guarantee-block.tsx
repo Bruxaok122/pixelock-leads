@@ -1,6 +1,6 @@
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
-import { checkoutUrlFor, pixDiscountFor, pixPriceFor } from "@/lib/checkout";
-import { trackMetaEvent } from "@/lib/meta-pixel";
+import { pixDiscountFor, pixPriceFor } from "@/lib/checkout";
+import { useCheckout } from "@/hooks/use-checkout";
 import selo from "@/assets/selo-garantia-30-dias.png";
 
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -49,14 +49,7 @@ export function GuaranteeBlock({ price = 185 }: { price?: number }) {
   const parcela = brl.format(Math.round((price / 12) * 100) / 100);
   const pixDiscount = pixDiscountFor(price);
   const pixPrice = pixPriceFor(price);
-  const goCheckout = () => {
-    const checkoutUrl = checkoutUrlFor(price);
-    if (checkoutUrl) {
-      trackMetaEvent("InitiateCheckout");
-      window.dispatchEvent(new Event("ufhurd:checkout-clicked"));
-      window.open(checkoutUrl, "_blank", "noopener,noreferrer");
-    }
-  };
+  const { goCheckout, pending, error } = useCheckout(price);
 
   return (
     <section
@@ -106,7 +99,9 @@ export function GuaranteeBlock({ price = 185 }: { price?: number }) {
           <div className="mt-6 grid gap-4 text-left">
             <button
               type="button"
-              onClick={goCheckout}
+              onClick={() => void goCheckout()}
+              disabled={pending}
+              aria-busy={pending}
               className="relative flex w-full items-center justify-between overflow-hidden rounded-2xl border border-sheet-foreground/10 bg-sheet-foreground/[0.03] p-5 sm:p-7"
             >
               <CardArt />
@@ -123,7 +118,9 @@ export function GuaranteeBlock({ price = 185 }: { price?: number }) {
 
             <button
               type="button"
-              onClick={goCheckout}
+              onClick={() => void goCheckout()}
+              disabled={pending}
+              aria-busy={pending}
               className="relative flex w-full items-center justify-between overflow-hidden rounded-2xl bg-success p-5 text-success-foreground sm:p-7"
             >
               <PixArt />
@@ -141,6 +138,8 @@ export function GuaranteeBlock({ price = 185 }: { price?: number }) {
               <ArrowUpRight className="relative h-7 w-7 shrink-0 sm:h-9 sm:w-9" aria-hidden />
             </button>
           </div>
+          {pending ? <p role="status" className="mt-2 text-sm text-muted-foreground">Abrindo pagamento...</p> : null}
+          {error ? <p role="alert" className="mt-2 text-sm text-destructive">{error}</p> : null}
         </div>
       </div>
     </section>

@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Permitir editar os três links de checkout no painel com efeito imediato no clique
+
 - [x] Adicionar gestão independente do Pixel UTMify na seção Pixels, preservando o ID atual
 
 - [x] Corrigir erro de compilação preservando as últimas edições

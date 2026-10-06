@@ -1,6 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
-import { checkoutUrlFor, pixDiscountFor, pixPriceFor } from "@/lib/checkout";
-import { trackMetaEvent } from "@/lib/meta-pixel";
+import { pixDiscountFor, pixPriceFor } from "@/lib/checkout";
+import { useCheckout } from "@/hooks/use-checkout";
 
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -11,14 +11,7 @@ function installment(total: number, times: number) {
 export function OfferBlock({ price, previousPrice }: { price: number; previousPrice?: number }) {
   const pixDiscount = pixDiscountFor(price);
   const pixPrice = pixPriceFor(price);
-  const goCheckout = () => {
-    const checkoutUrl = checkoutUrlFor(price);
-    if (checkoutUrl) {
-      trackMetaEvent("InitiateCheckout");
-      window.dispatchEvent(new Event("ufhurd:checkout-clicked"));
-      window.open(checkoutUrl, "_blank", "noopener,noreferrer");
-    }
-  };
+  const { goCheckout, pending, error } = useCheckout(price);
 
   return (
     <section className="reveal-up mx-auto mt-5 w-full max-w-[760px]">
@@ -36,7 +29,9 @@ export function OfferBlock({ price, previousPrice }: { price: number; previousPr
       <div className="mt-4 grid gap-3">
         <button
           type="button"
-          onClick={goCheckout}
+          onClick={() => void goCheckout()}
+          disabled={pending}
+          aria-busy={pending}
           className="surface-card flex w-full items-center justify-between rounded-2xl p-5 text-left"
         >
           <span className="block">
@@ -55,7 +50,9 @@ export function OfferBlock({ price, previousPrice }: { price: number; previousPr
 
         <button
           type="button"
-          onClick={goCheckout}
+          onClick={() => void goCheckout()}
+          disabled={pending}
+          aria-busy={pending}
           className="flex w-full items-center justify-between rounded-2xl bg-success p-5 text-left text-success-foreground"
         >
           <span className="block">
@@ -70,6 +67,8 @@ export function OfferBlock({ price, previousPrice }: { price: number; previousPr
       </div>
 
       <p className="mt-4 text-center text-xs text-muted-foreground">Compra protegida por criptografia.</p>
+      {pending ? <p role="status" className="mt-2 text-center text-sm text-muted-foreground">Abrindo pagamento...</p> : null}
+      {error ? <p role="alert" className="mt-2 text-center text-sm text-destructive">{error}</p> : null}
     </section>
   );
 }

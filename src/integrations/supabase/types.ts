@@ -167,6 +167,7 @@ export type Database = {
       }
       tracking_settings: {
         Row: {
+          checkout_links: Json | null
           enabled: boolean
           id: string
           meta_pixel_id: string | null
@@ -176,6 +177,7 @@ export type Database = {
           utmify_pixel_id: string | null
         }
         Insert: {
+          checkout_links?: Json | null
           enabled?: boolean
           id?: string
           meta_pixel_id?: string | null
@@ -185,6 +187,7 @@ export type Database = {
           utmify_pixel_id?: string | null
         }
         Update: {
+          checkout_links?: Json | null
           enabled?: boolean
           id?: string
           meta_pixel_id?: string | null

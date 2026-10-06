@@ -11,8 +11,8 @@ const TRACKING_PARAMETERS = [
 ] as const;
 
 /** Repassa a atribuição para o checkout mesmo se o script da UTMify ainda não carregou. */
-export function checkoutUrlFor(price: number): string | null {
-  const destination = CHECKOUT_BY_PRICE[price];
+export function checkoutUrlFor(price: number, links: Record<string, string> = CHECKOUT_BY_PRICE): string | null {
+  const destination = links[String(price)];
   if (!destination) return null;
 
   const url = new URL(destination);

@@ -29,6 +29,13 @@
       "when": 1791317842580,
       "tag": "0003_add_utmify_pixel_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791318284325,
+      "tag": "0004_add_editable_checkout_links",
+      "breakpoints": true
     }
   ]
 }
